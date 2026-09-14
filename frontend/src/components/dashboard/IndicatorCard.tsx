@@ -10,12 +10,13 @@ export function IndicatorCard({
   unit,
 }: IndicatorCardProps) {
   return (
-    <div className="indicator-card">
-      <h3>{name}</h3>
+    <article className="indicator-card">
+      <span className="indicator-label">{name}</span>
 
-      <p>
-        {value} {unit}
-      </p>
-    </div>
+      <strong className="indicator-value">
+        {value}
+        {unit && <span className="indicator-unit"> {unit}</span>}
+      </strong>
+    </article>
   );
 }

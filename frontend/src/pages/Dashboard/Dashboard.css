@@ -1,0 +1,108 @@
+.dashboard {
+  min-height: 100vh;
+  background: #f7f8fc;
+  color: #1f2937;
+}
+
+.dashboard-header {
+  background: linear-gradient(
+    135deg,
+    #0a4aad 0%,
+    #6c5ce0 55%,
+    #c750d6 100%
+  );
+
+  color: white;
+  padding: 64px 32px;
+}
+
+.dashboard-header-content {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.dashboard-header h1 {
+  margin: 8px 0;
+  font-size: 48px;
+}
+
+.dashboard-subtitle {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.dashboard-description {
+  margin-top: 12px;
+  font-size: 18px;
+  opacity: 0.9;
+}
+
+.dashboard-content {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 48px 32px;
+}
+
+.section-title h2 {
+  margin-bottom: 4px;
+  font-size: 28px;
+}
+
+.section-title p {
+  margin-top: 0;
+  color: #667085;
+}
+
+.indicator-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24px;
+  margin-top: 32px;
+}
+
+.indicator-card {
+  background: white;
+  border-radius: 16px;
+  padding: 28px;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.07);
+  border: 1px solid #ececf3;
+}
+
+.indicator-label {
+  display: block;
+  color: #667085;
+  font-size: 15px;
+  margin-bottom: 16px;
+}
+
+.indicator-value {
+  display: block;
+  font-size: 36px;
+  color: #0a4aad;
+}
+
+.indicator-unit {
+  font-size: 16px;
+  color: #667085;
+}
+
+@media (max-width: 800px) {
+  .indicator-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .dashboard-header h1 {
+    font-size: 36px;
+  }
+
+  .dashboard-header {
+    padding: 48px 24px;
+  }
+
+  .dashboard-content {
+    padding: 32px 24px;
+  }
+}
