@@ -1,10 +1,11 @@
 import { useState } from 'react';
 import { mockIndicators } from '../../services/mockIndicators';
 import { IndicatorCard } from '../../components/dashboard/IndicatorCard';
+import { IndicatorsChart } from '../../components/dashboard/IndicatorsChart';
 import './Dashboard.css';
 
 export function Dashboard() {
-  const [selectedPeriod, setSelectedPeriod] = useState('Todos');
+  const [selectedPeriod, setSelectedPeriod] = useState('2026');
   const [selectedSector, setSelectedSector] = useState('Todos');
 
   const periods = [
@@ -93,6 +94,16 @@ export function Dashboard() {
             />
           ))}
         </div>
+
+        <IndicatorsChart
+          data={filteredIndicators.map((indicator) => ({
+            name:
+              selectedPeriod === 'Todos'
+              ? `${indicator.name} - ${indicator.period}`
+              : indicator.name,
+            value: indicator.value,
+          }))}
+        />
 
         {filteredIndicators.length === 0 && (
           <p className="no-results">
