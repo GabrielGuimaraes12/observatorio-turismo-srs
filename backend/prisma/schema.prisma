@@ -1,0 +1,89 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+model User {
+  id           String   @id @default(uuid())
+  name         String
+  email        String   @unique
+  passwordHash String
+  role         String   @default("ADMIN")
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  changes ChangeLog[]
+}
+
+model Sector {
+  id          String      @id @default(uuid())
+  name        String      @unique
+  description String?
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  indicators Indicator[]
+}
+
+model Period {
+  id        String      @id @default(uuid())
+  name      String
+  startDate DateTime
+  endDate   DateTime
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+
+  indicators Indicator[]
+  reports    Report[]
+}
+
+model Indicator {
+  id          String   @id @default(uuid())
+  name        String
+  description String?
+  value       Float
+  unit        String?
+  published   Boolean  @default(false)
+
+  sectorId String
+  periodId String
+
+  sector Sector @relation(fields: [sectorId], references: [id])
+  period Period @relation(fields: [periodId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Report {
+  id          String   @id @default(uuid())
+  title       String
+  description String?
+  fileUrl     String
+  published   Boolean  @default(false)
+
+  periodId String?
+  period   Period? @relation(fields: [periodId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model ChangeLog {
+  id       String   @id @default(uuid())
+  action   String
+  entity   String
+  entityId String
+  createdAt DateTime @default(now())
+
+  userId String?
+  user   User? @relation(fields: [userId], references: [id])
+}

@@ -1,0 +1,41 @@
+# Dependencies
+node_modules/
+**/node_modules/
+
+# Environment variables
+.env
+.env.*
+!.env.example
+**/.env
+**/.env.*
+!**/.env.example
+
+# Build
+dist/
+**/dist/
+*.tsbuildinfo
+**/*.tsbuildinfo
+
+# Vite
+.vite/
+
+# Logs
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+
+# Prisma generated client
+generated/
+**/generated/
+
+# Prisma/AI helper files not needed in the repository
+**/.agents/
+**/.claude/
+**/.windsurf/
+**/skills-lock.json
