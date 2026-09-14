@@ -22,4 +22,25 @@ export const mockIndicators: Indicator[] = [
     sector: 'Turismo',
     period: '2026',
   },
+  {
+    id: '4',
+    name: 'Empresas do setor',
+    value: 105,
+    sector: 'Turismo',
+    period: '2025',
+  },
+  {
+    id: '5',
+    name: 'Leitos disponíveis',
+    value: 790,
+    sector: 'Hospedagem',
+    period: '2025',
+  },
+  {
+    id: '6',
+    name: 'Empregos no setor',
+    value: 395,
+    sector: 'Turismo',
+    period: '2025',
+  },
 ];
