@@ -1,3 +1,4 @@
+import { NavLink } from 'react-router-dom';
 import logoObservatorio from '../../assets/logo-observatorio.png';
 import './Header.css';
 
@@ -6,24 +7,35 @@ export function Header() {
     <header className="site-header">
       <div className="header-container">
 
-        <a href="/" className="header-logo">
+        <NavLink to="/" className="header-logo">
           <img
             src={logoObservatorio}
             alt="Observatório do Turismo de Santa Rita do Sapucaí"
           />
-        </a>
+        </NavLink>
 
         <nav className="header-navigation">
 
-          <a href="/" className="nav-link active">
+          <NavLink
+            to="/"
+            end
+            className={({ isActive }) =>
+              `nav-link ${isActive ? 'active' : ''}`
+            }
+          >
             <span className="nav-icon"></span>
             Início
-          </a>
+          </NavLink>
 
-          <a href="/indicadores" className="nav-link">
+          <NavLink
+            to="/indicadores"
+            className={({ isActive }) =>
+              `nav-link ${isActive ? 'active' : ''}`
+            }
+          >
             <span className="nav-icon"></span>
             Indicadores
-          </a>
+          </NavLink>
 
           <a href="/relatorios" className="nav-link">
             <span className="nav-icon"></span>

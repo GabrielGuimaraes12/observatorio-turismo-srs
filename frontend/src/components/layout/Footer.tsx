@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom';
 import logoObservatorio from '../../assets/logo-observatorio.png';
 import logoPrefeitura from '../../assets/logo-prefeitura.png';
 import './Footer.css';
@@ -7,16 +8,16 @@ export function Footer() {
     <footer className="site-footer">
       <div className="footer-container">
 
-        <div className="footer-logo">
+        <Link to="/" className="footer-logo">
           <img
             src={logoObservatorio}
             alt="Observatório do Turismo de Santa Rita do Sapucaí"
           />
-        </div>
+        </Link>
 
         <nav className="footer-navigation">
-          <a href="/">Início</a>
-          <a href="/indicadores">Indicadores</a>
+          <Link to="/">Início</Link>
+          <Link to="/indicadores">Indicadores</Link>
           <a href="/relatorios">Relatórios</a>
           <a href="/sobre">Sobre</a>
         </nav>

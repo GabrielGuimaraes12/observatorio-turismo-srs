@@ -1,38 +1,434 @@
+.indicators-page {
+  min-height: 100vh;
+  background: #ffffff;
+  color: #1f1f1f;
+}
+
+/* INTRODUÇÃO */
+
+.indicators-hero {
+  padding: 24px 48px 0;
+}
+
+.indicators-hero-content {
+  max-width: 1224px;
+  min-height: 210px;
+  margin: 0 auto;
+
+  padding: 34px;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 40px;
+
+  background: #f7f2fa;
+  border-radius: 18px;
+}
+
+.indicators-hero-text {
+  max-width: 700px;
+}
+
+.indicators-label {
+  margin: 0 0 10px;
+
+  color: #6c4ab6;
+
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+}
+
+.indicators-hero-text h1 {
+  margin: 0;
+
+  font-size: 40px;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+
+  color: #1d1d1d;
+}
+
+.indicators-hero-text > p:last-child {
+  max-width: 650px;
+  margin: 14px 0 0;
+
+  color: #666666;
+
+  font-size: 15px;
+  line-height: 1.6;
+}
+
+.indicators-illustration {
+  width: 300px;
+  height: 145px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 16px;
+
+  background: #eee5f4;
+}
+
+.indicators-illustration span {
+  color: #6c4ab6;
+
+  font-size: 45px;
+  font-weight: 700;
+}
+
+/* CONTEÚDO */
+
+.indicators-container {
+  max-width: 1224px;
+
+  margin: 0 auto;
+
+  padding-top: 34px;
+}
+
+/* FILTROS */
+
+.filters-container {
+  display: flex;
+  align-items: flex-end;
+  gap: 16px;
+
+  margin-bottom: 32px;
+}
+
+.filter-field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.filter-field:nth-child(1) {
+  width: 250px;
+}
+
+.filter-field:nth-child(2) {
+  width: 290px;
+}
+
+.filter-field:nth-child(3) {
+  width: 275px;
+}
+
+.filter-field label {
+  color: #444444;
+
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.filter-field select {
+  width: 100%;
+  height: 48px;
+
+  padding: 0 15px;
+
+  border: 1px solid #ded7e4;
+  border-radius: 10px;
+
+  outline: none;
+
+  background: #ffffff;
+  color: #333333;
+
+  font-family: inherit;
+  font-size: 14px;
+
+  cursor: pointer;
+
+  transition: border-color 0.2s ease;
+}
+
+.filter-field select:focus {
+  border-color: #6c4ab6;
+}
+
+.filter-button {
+  min-width: 180px;
+  height: 48px;
+
+  padding: 0 22px;
+
+  border: none;
+  border-radius: 999px;
+
+  background: #6c4ab6;
+  color: #ffffff;
+
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+
+  cursor: pointer;
+
+  transition:
+    background-color 0.2s ease,
+    transform 0.2s ease;
+}
+
+.filter-button:hover {
+  background: #5c3ea1;
+  transform: translateY(-1px);
+}
+
+/* CARDS */
+
 .indicator-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 24px;
-  margin-top: 32px;
+  gap: 16px;
+
+  margin-top: 0;
 }
 
 .indicator-card {
-  background: white;
-  border-radius: 16px;
-  padding: 28px;
-  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.07);
-  border: 1px solid #ececf3;
+  min-height: 145px;
+
+  padding: 20px;
+
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+
+  background: #fbf8fd;
+
+  border: 1px solid #ded7e4;
+  border-radius: 14px;
+
+  box-shadow: none;
 }
 
 .indicator-label {
   display: block;
-  color: #667085;
-  font-size: 15px;
-  margin-bottom: 16px;
+
+  margin-bottom: 12px;
+
+  color: #555555;
+
+  font-size: 14px;
+  font-weight: 500;
 }
 
 .indicator-value {
   display: block;
-  font-size: 36px;
-  color: #0a4aad;
+
+  color: #1f1f1f;
+
+  font-size: 32px;
+  line-height: 1;
+  font-weight: 700;
 }
 
 .indicator-unit {
-  font-size: 16px;
-  color: #667085;
+  color: #666666;
+
+  font-size: 15px;
+  font-weight: 500;
+}
+
+/* SEM RESULTADOS */
+
+.no-results {
+  margin-top: 30px;
+
+  padding: 30px;
+
+  text-align: center;
+
+  background: #fbf8fd;
+
+  border: 1px solid #ded7e4;
+  border-radius: 14px;
+}
+
+.no-results h3 {
+  margin: 0 0 8px;
+}
+
+.no-results p {
+  margin: 0;
+
+  color: #666666;
+}
+
+/* GRÁFICOS */
+
+.charts-section {
+  max-width: 1224px;
+
+  margin: 0 auto;
+
+  padding-top: 36px;
+}
+
+.chart-card {
+  padding: 22px;
+
+  background: #ffffff;
+
+  border: 1px solid #ded7e4;
+  border-radius: 14px;
+
+  box-shadow: none;
+}
+
+.chart-header {
+  margin-bottom: 22px;
+}
+
+.chart-header h3,
+.chart-header h2 {
+  margin: 0;
+
+  color: #222222;
+
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.chart-header p {
+  margin: 6px 0 0;
+
+  color: #777777;
+
+  font-size: 13px;
+}
+
+.chart-label {
+  margin: 0 0 7px !important;
+
+  color: #6c4ab6 !important;
+
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.12em;
+}
+
+.chart-container {
+  width: 100%;
+  min-height: 320px;
+}
+
+/* FONTE */
+
+.data-source {
+  max-width: 1224px;
+
+  margin: 34px auto 60px;
+
+  padding: 18px 22px;
+
+  display: flex;
+  align-items: center;
+  gap: 14px;
+
+  background: #f7f2fa;
+
+  border: 1px solid #e1d8e7;
+  border-radius: 12px;
+}
+
+.data-source-icon {
+  color: #6c4ab6;
+
+  font-size: 22px;
+}
+
+.data-source p {
+  margin: 0;
+
+  color: #666666;
+
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+/* RESPONSIVO */
+
+@media (max-width: 1100px) {
+  .indicators-hero {
+    padding-left: 24px;
+    padding-right: 24px;
+  }
+
+  .indicators-container,
+  .charts-section,
+  .data-source {
+    margin-left: 24px;
+    margin-right: 24px;
+  }
+
+  .filters-container {
+    flex-wrap: wrap;
+  }
+
+  .filter-field:nth-child(1),
+  .filter-field:nth-child(2),
+  .filter-field:nth-child(3) {
+    flex: 1;
+    min-width: 220px;
+  }
+
+  .indicator-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
 }
 
 @media (max-width: 800px) {
+  .indicators-hero-content {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .indicators-illustration {
+    width: 100%;
+  }
+
+  .filters-container {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .filter-field:nth-child(1),
+  .filter-field:nth-child(2),
+  .filter-field:nth-child(3) {
+    width: 100%;
+  }
+
+  .filter-button {
+    width: 100%;
+  }
+
   .indicator-grid {
     grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 600px) {
+  .indicators-hero {
+    padding: 16px 16px 0;
+  }
+
+  .indicators-container,
+  .charts-section,
+  .data-source {
+    margin-left: 16px;
+    margin-right: 16px;
+  }
+
+  .indicators-hero-content {
+    padding: 24px;
+  }
+
+  .indicators-hero-text h1 {
+    font-size: 34px;
   }
 }
