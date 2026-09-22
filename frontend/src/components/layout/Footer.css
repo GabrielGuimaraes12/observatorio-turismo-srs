@@ -1,0 +1,92 @@
+.site-footer {
+  width: 100%;
+  background: #ffffff;
+  border-top: 1px solid #eeeeee;
+}
+
+.footer-container {
+  max-width: 1320px;
+  min-height: 112px;
+  margin: 0 auto;
+
+  padding: 16px 48px;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 32px;
+}
+
+.footer-logo img {
+  width: 180px;
+  height: auto;
+  object-fit: contain;
+}
+
+.footer-navigation {
+  display: flex;
+  align-items: center;
+  gap: 28px;
+}
+
+.footer-navigation a {
+  color: #333333;
+  text-decoration: none;
+
+  font-size: 14px;
+  font-weight: 500;
+
+  transition: color 0.2s ease;
+}
+
+.footer-navigation a:hover {
+  color: #6c4ab6;
+}
+
+.footer-prefeitura {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.footer-prefeitura img {
+  width: 130px;
+  height: auto;
+  object-fit: contain;
+}
+
+@media (max-width: 900px) {
+
+  .footer-container {
+    flex-direction: column;
+    justify-content: center;
+
+    padding: 28px 24px;
+  }
+
+  .footer-navigation {
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .footer-prefeitura {
+    justify-content: center;
+  }
+
+}
+
+@media (max-width: 600px) {
+
+  .footer-logo img {
+    width: 150px;
+  }
+
+  .footer-prefeitura img {
+    width: 110px;
+  }
+
+  .footer-navigation {
+    gap: 16px;
+  }
+
+}
