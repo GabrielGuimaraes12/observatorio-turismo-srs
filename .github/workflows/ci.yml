@@ -17,6 +17,20 @@ jobs:
   backend:
     name: Backend
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: observatorio
+          POSTGRES_PASSWORD: observatorio
+          POSTGRES_DB: observatorio
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U observatorio -d observatorio"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
     defaults:
       run:
         working-directory: backend
@@ -38,13 +52,19 @@ jobs:
         run: npm ci
 
       - name: Generate Prisma client
-        run: npm exec prisma generate
+        run: npm run generate:prisma
+
+      - name: Lint
+        run: npm run lint
 
       - name: Build
         run: npm run build
 
       - name: Test
         run: npm test
+
+      - name: End-to-end tests
+        run: npm run test:e2e
 
   frontend:
     name: Frontend
@@ -67,6 +87,9 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Lint
+        run: npm run lint
+
       - name: Build
         run: npm run build
 
@@ -79,4 +102,4 @@ jobs:
         uses: actions/checkout@v6
 
       - name: Validate Compose configuration
-        run: docker compose config --quiet
+        run: docker compose --env-file .env.example config --quiet
