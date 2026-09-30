@@ -11,9 +11,14 @@ import { mockIndicators } from '../../services/mockIndicators';
 import './Dashboard.css';
 
 export function Dashboard() {
+  // Valores escolhidos nos selects
   const [selectedPeriod, setSelectedPeriod] = useState('2026');
   const [selectedSector, setSelectedSector] = useState('Todos');
   const [selectedType, setSelectedType] = useState('Todos');
+
+  // Valores realmente aplicados aos dados
+  const [appliedPeriod, setAppliedPeriod] = useState('2026');
+  const [appliedSector, setAppliedSector] = useState('Todos');
 
   const periods = [
     'Todos',
@@ -31,24 +36,29 @@ export function Dashboard() {
 
   const filteredIndicators = mockIndicators.filter((indicator) => {
     const matchesPeriod =
-      selectedPeriod === 'Todos' ||
-      indicator.period === selectedPeriod;
+      appliedPeriod === 'Todos' ||
+      indicator.period === appliedPeriod;
 
     const matchesSector =
-      selectedSector === 'Todos' ||
-      indicator.sector === selectedSector;
+      appliedSector === 'Todos' ||
+      indicator.sector === appliedSector;
 
     return matchesPeriod && matchesSector;
   });
 
   const chartData = filteredIndicators.map((indicator) => ({
     name:
-      selectedPeriod === 'Todos'
+      appliedPeriod === 'Todos'
         ? `${indicator.name} - ${indicator.period}`
         : indicator.name,
 
     value: indicator.value,
   }));
+
+  function handleApplyFilters() {
+    setAppliedPeriod(selectedPeriod);
+    setAppliedSector(selectedSector);
+  }
 
   return (
     <div className="indicators-page">
@@ -183,6 +193,7 @@ export function Dashboard() {
             <button
               type="button"
               className="filter-button"
+              onClick={handleApplyFilters}
             >
               Aplicar filtros
             </button>
