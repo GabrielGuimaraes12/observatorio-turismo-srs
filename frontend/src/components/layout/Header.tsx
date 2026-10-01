@@ -47,15 +47,10 @@ export function Header() {
             Relatórios
           </NavLink>
 
-          <NavLink
-            to="/login"
-            className={({ isActive }) =>
-              `nav-link ${isActive ? 'active' : ''}`
-            }
-          >
+          <a href="/login" className="nav-link">
             <span className="nav-icon"></span>
-            Login
-          </NavLink>
+            Entrar
+          </a>
 
         </nav>
 
