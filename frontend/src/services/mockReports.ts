@@ -7,7 +7,7 @@ export const mockReports: Report[] = [
         period: '2026',
         sector: 'Todos',
         description: 'Relatório com os principais indicadores do turismo de Santa Rita do Sapucaí.',
-        pdfUrl: '#',
+        pdfUrl: '/reports/relatorio-turismo-demonstracao.pdf',
     },
     {
         id: '2',
@@ -15,7 +15,7 @@ export const mockReports: Report[] = [
         period: 'Janeiro - Dezembro de 2025',
         sector: 'Todos',
         description: 'Dados e informações sobre o desenvolvimento do turismo no município',
-        pdfUrl: '#',
+        pdfUrl: '/reports/relatorio-turismo-demonstracao.pdf',
     },
     {
         id: '3',
@@ -23,7 +23,7 @@ export const mockReports: Report[] = [
         period: '2025',
         sector: 'Turismo',
         description: 'Levantamento dos principais estabelecimentos e atividades turísticas',
-        pdfUrl: '#',
+        pdfUrl: '/reports/relatorio-turismo-demonstracao.pdf',
     },
     {
         id: '4',
@@ -31,7 +31,7 @@ export const mockReports: Report[] = [
         period: 'Janeiro - Junho de 2026',
         sector: 'Hospedagem',
         description: 'Relatório com dados sobre os estabelecimentos e a oferta de hospedagem no município.',
-        pdfUrl: '#',
+        pdfUrl: '/reports/relatorio-turismo-demonstracao.pdf',
     },
     {
         id: '5',
@@ -40,6 +40,6 @@ export const mockReports: Report[] = [
         sector: 'Hospedagem',
         description:
         'Dados e informações sobre o setor de hospedagem de Santa Rita do Sapucaí.',
-        pdfUrl: '#',
+        pdfUrl: '/reports/relatorio-turismo-demonstracao.pdf',
     },
 ];

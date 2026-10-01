@@ -71,8 +71,19 @@ export function Reports() {
               </div>
 
               <div className="report-actions">
-                <a href={report.pdfUrl}>Ver relatório</a>
-                <a href={report.pdfUrl}>Baixar PDF</a>
+                <a 
+                href={report.pdfUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                >
+                    Ver relatório
+                    </a>
+                <a
+                href={report.pdfUrl}
+                download
+                >
+                    Baixar PDF
+                    </a>
               </div>
             </article>
           ))}
