@@ -37,15 +37,25 @@ export function Header() {
             Indicadores
           </NavLink>
 
-          <a href="/relatorios" className="nav-link">
+          <NavLink
+            to="/relatorios"
+            className={({ isActive }) =>
+              `nav-link ${isActive ? 'active' : ''}`
+            }
+          >
             <span className="nav-icon"></span>
             Relatórios
-          </a>
+          </NavLink>
 
-          <a href="/login" className="nav-link">
+          <NavLink
+            to="/login"
+            className={({ isActive }) =>
+              `nav-link ${isActive ? 'active' : ''}`
+            }
+          >
             <span className="nav-icon"></span>
-            Entrar
-          </a>
+            Login
+          </NavLink>
 
         </nav>
 
