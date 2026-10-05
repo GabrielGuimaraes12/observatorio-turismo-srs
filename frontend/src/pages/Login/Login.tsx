@@ -39,9 +39,6 @@ export function Login() {
         return;
     }
 
-    console.log('Dados de login:', {
-        email, password
-    });
   }
 
   return (
