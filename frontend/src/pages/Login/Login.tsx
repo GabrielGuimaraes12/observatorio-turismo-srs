@@ -1,5 +1,5 @@
 import { type FormEvent, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import './Login.css';
 
 import logoObservatorioBranco from '../../assets/logo-observatorio-branco.png';
@@ -16,6 +16,8 @@ export function Login() {
   const [loginError, setLoginError] = useState('');
   const [loginSuccess, setLoginSuccess] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+
+  const navigate = useNavigate();
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -66,6 +68,7 @@ export function Login() {
       );
 
       setLoginSuccess(`Login realizado com sucesso. Bem-vindo, ${response.user.name}!`);
+      navigate('/admin/relatorios', { replace: true });
     } catch (error) {
       if (error instanceof Error) {
         setLoginError(error.message);
