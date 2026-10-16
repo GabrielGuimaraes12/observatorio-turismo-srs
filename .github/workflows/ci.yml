@@ -36,6 +36,7 @@ jobs:
         working-directory: backend
     env:
       DATABASE_URL: postgresql://observatorio:observatorio@localhost:5432/observatorio?schema=public
+      JWT_SECRET: ci-test-secret-not-for-production
 
     steps:
       - name: Checkout repository
@@ -53,6 +54,9 @@ jobs:
 
       - name: Generate Prisma client
         run: npm run generate:prisma
+
+      - name: Push Prisma to DB
+        run: npm run push:prisma
 
       - name: Lint
         run: npm run lint

@@ -5,7 +5,9 @@ export default defineConfig({
   plugins: [tsconfigPaths()],
   test: {
     globals: true,
-    root: './',
-    include: ['**/*.e2e-spec.ts'],
+    environment: 'node',
+    include: ['test/**/*.e2e-spec.ts'],
+    pool: 'forks',
+    testTimeout: 30_000,
   },
 });
