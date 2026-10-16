@@ -54,6 +54,9 @@ jobs:
       - name: Generate Prisma client
         run: npm run generate:prisma
 
+      - name: Push Prisma to DB
+        run: npm run push:prisma
+
       - name: Lint
         run: npm run lint
 
