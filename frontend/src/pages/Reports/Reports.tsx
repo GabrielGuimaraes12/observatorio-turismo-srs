@@ -1,22 +1,33 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Header } from '../../components/layout/Header';
 import { Footer } from '../../components/layout/Footer';
-import { mockReports } from '../../services/mockReports';
+import { getReports } from '../../services/reportService';
+import { applyReportMetadata } from '../../services/reportMetadataStorage';
 import './Reports.css';
 
 export function Reports() {
-    const [selectedPeriod, setSelectedPeriod] = useState('Todos');
-    const [selectedSector, setSelectedSector] = useState('Todos');
+  const [reports, setReports] = useState<Awaited<ReturnType<typeof getReports>>>([]);
+  const [selectedPeriod, setSelectedPeriod] = useState('Todos');
+  const [selectedSector, setSelectedSector] = useState('Todos');
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
-    const filteredReports = mockReports.filter((report) => {
-        const matchesPeriod =
-        selectedPeriod === 'Todos' || report.period.includes(selectedPeriod);
+  useEffect(() => {
+    getReports()
+      .then((data) => setReports(applyReportMetadata(data)))
+      .catch(() => setError('Não foi possível carregar os relatórios.'))
+      .finally(() => setLoading(false));
+}, []);
 
-        const matchesSector =
-        selectedSector === 'Todos' || report.sector.includes(selectedSector);
+  const filteredReports = reports.filter((report) => {
+  const matchesPeriod =
+    selectedPeriod === 'Todos' || report.period.includes(selectedPeriod);
 
-        return matchesPeriod && matchesSector;
-    });
+  const matchesSector =
+    selectedSector === 'Todos' || report.sector.includes(selectedSector);
+
+  return matchesPeriod && matchesSector;
+});
   return (
     <div className="reports-page">
       <Header />
@@ -52,6 +63,8 @@ export function Reports() {
         </section>
 
         <section className="reports-grid">
+          {loading && <p>Carregando relatórios...</p>}
+          {error && <p role="alert">{error}</p>}
           {filteredReports.map((report) => (
             <article className="report-card" key={report.id}>
               <div className="report-icon">PDF</div>
@@ -87,7 +100,7 @@ export function Reports() {
               </div>
             </article>
           ))}
-          {filteredReports.length === 0 && (
+          {!loading && !error && filteredReports.length === 0 && (
             <p>Nenhum relatório encontrado para os filtros selecionados</p>)}
         </section>
       </main>
