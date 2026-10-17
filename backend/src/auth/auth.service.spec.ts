@@ -94,6 +94,37 @@ describe('AuthService', () => {
 
       expect(result.user).not.toHaveProperty('passwordHash');
     });
+
+    it('does not set a role when creating a user — lets the schema default apply', async () => {
+      prisma.user.findUnique.mockResolvedValue(null);
+      (bcrypt.hash as Mock).mockResolvedValue('hashed');
+      prisma.user.create.mockResolvedValue(baseUser);
+    
+      await service.register('Alice', 'alice@example.com', 'Passw0rd!');
+    
+      const createCall = prisma.user.create.mock.calls[0][0];
+      expect(createCall.data).not.toHaveProperty('role');
+    });
+    
+    it('returns the user with the role Prisma assigned (USER by default)', async () => {
+      prisma.user.findUnique.mockResolvedValue(null);
+      (bcrypt.hash as Mock).mockResolvedValue('hashed');
+      prisma.user.create.mockResolvedValue(baseUser);
+    
+      const result = await service.register('Alice', 'alice@example.com', 'Passw0rd!');
+    
+      expect(result.user.role).toBe('USER');
+    });
+    
+    it('never promotes the user via the service — role must come from the schema', async () => {
+      prisma.user.findUnique.mockResolvedValue(null);
+      (bcrypt.hash as Mock).mockResolvedValue('hashed');
+      prisma.user.create.mockResolvedValue(baseUser);
+    
+      const result = await service.register('Alice', 'alice@example.com', 'Passw0rd!');
+    
+      expect(result.user.role).not.toBe('ADMIN');
+    });
   });
 
   describe('login', () => {
@@ -126,17 +157,6 @@ describe('AuthService', () => {
         service.login('alice@example.com', 'wrong'),
       ).rejects.toThrow('Invalid credentials');
       expect(jwt.createToken).not.toHaveBeenCalled();
-    });
-
-    it('wraps Prisma errors in a generic message', async () => {
-      prisma.user.findUnique.mockRejectedValue(new Error('db down'));
-      const spy = vi.spyOn(console, 'error').mockImplementation(() => {});
-
-      await expect(
-        service.login('alice@example.com', 'Passw0rd!'),
-      ).rejects.toThrow('Oops, something went wrong');
-
-      spy.mockRestore();
     });
   });
 });

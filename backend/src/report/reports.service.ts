@@ -37,10 +37,12 @@ export class ReportsService {
   }
 
   async update(id: string, dto: UpdateReportDto) {
-    await this.findOne(id); // throws 404 if missing
+    await this.findOne(id);
     return this.prisma.report.update({
       where: { id },
-      data: dto,
+      data: Object.fromEntries(
+        Object.entries(dto).filter(([, v]) => v !== undefined),
+      ),
       include: { period: true },
     });
   }
