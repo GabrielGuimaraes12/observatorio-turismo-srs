@@ -1,4 +1,9 @@
-import { Injectable } from '@nestjs/common';
+import {
+  ConflictException,
+  Injectable,
+  NotFoundException,
+  UnauthorizedException,
+} from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { JwtTokenService } from './jwt.service.js';
@@ -39,7 +44,7 @@ export class AuthService {
   async register(name: string, email: string, password: string) {
     const existing = await this.prisma.user.findUnique({ where: { email } });
     if (existing) {
-      throw new Error('Email already registered');
+      throw new ConflictException('Email already registered');
     }
 
     const passwordHash = await this.hashPassword(password);
@@ -52,24 +57,35 @@ export class AuthService {
   }
 
   async login(email: string, password: string) {
-		let user;
-		try {
-			user = await this.prisma.user.findUnique({ where: { email } });
-		} catch (e) {
-			console.error('Prisma error on login:', e);
-			throw new Error('Oops, something went wrong');
-		}
-
+    const user = await this.prisma.user.findUnique({ where: { email } });
     if (!user) {
-      throw new Error('Invalid credentials');
+      throw new UnauthorizedException('Invalid credentials');
     }
 
     const ok = await this.verifyPassword(password, user.passwordHash);
     if (!ok) {
-      throw new Error('Invalid credentials');
+      throw new UnauthorizedException('Invalid credentials');
     }
 
     const token = this.jwt.createToken(user.id);
     return { token, user: this.serializeUser(user) };
+  }
+
+  async promoteToAdmin(id: string) {
+    const user = await this.prisma.user.findUnique({ where: { id } });
+    if (!user) {
+      throw new NotFoundException(`User ${id} not found`);
+    }
+
+    if (user.role === 'ADMIN') {
+      throw new ConflictException(`User ${id} is already an ADMIN`);
+    }
+
+    const updated = await this.prisma.user.update({
+      where: { id },
+      data: { role: 'ADMIN' },
+    });
+
+    return this.serializeUser(updated);
   }
 }

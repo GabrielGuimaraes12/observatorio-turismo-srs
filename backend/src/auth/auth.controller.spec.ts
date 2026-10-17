@@ -36,14 +36,6 @@ describe('AuthController', () => {
       );
       expect(result).toBe(payload);
     });
-
-    it('wraps service errors in BadRequestException', async () => {
-      authService.register.mockRejectedValue(new Error('Email already registered'));
-
-      await expect(
-        controller.register({ name: 'A', email: 'a@b.com', password: 'x' }),
-      ).rejects.toBeInstanceOf(BadRequestException);
-    });
   });
 
   describe('login', () => {

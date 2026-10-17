@@ -1,9 +1,12 @@
 import {
-  BadRequestException,
   Body,
   Controller,
   HttpCode,
+  Param,
+  ParseUUIDPipe,
+  Patch,
   Post,
+  NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
 import { AuthService } from './auth.service.js';
@@ -14,13 +17,8 @@ export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
   @Post('register')
-  async register(@Body() body: UserCreateDto) {
-    try {
-      return await this.authService.register(body.name, body.email, body.password);
-    } catch (e) {
-			console.error('Error on register:', e);
-      throw new BadRequestException((e as Error).message);
-    }
+  register(@Body() body: UserCreateDto) {
+    return this.authService.register(body.name, body.email, body.password);
   }
 
   @Post('login')
@@ -29,8 +27,16 @@ export class AuthController {
     try {
       return await this.authService.login(body.email, body.password);
     } catch (e) {
-			console.error('Error on login:', e);
       throw new UnauthorizedException((e as Error).message);
     }
+  }
+
+  // ToDo -> remove this and add a secure way to make user admin
+  @Patch('promote/:id')
+  promote(@Param('id', new ParseUUIDPipe()) id: string) {
+    if (process.env.NODE_ENV === 'production') {
+      throw new NotFoundException();
+    }
+    return this.authService.promoteToAdmin(id);
   }
 }
