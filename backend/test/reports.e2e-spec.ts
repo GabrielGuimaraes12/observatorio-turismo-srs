@@ -50,10 +50,13 @@ describe('Reports (e2e)', () => {
     userToken = user.token;
 
     const admin = await register('Admin User', uniqueEmail('admin'));
-    await prisma.user.update({
-      where: { id: admin.user.id },
-      data: { role: 'ADMIN' },
-    });
+    await request(app.getHttpServer())
+      .patch(`/api/auth/promote/${admin.user.id}`)
+      .expect(200);
+
+    const adminRow = await prisma.user.findUnique({ where: { id: admin.user.id } });
+    expect(adminRow?.role).toBe('ADMIN');
+
     adminToken = admin.token;
 
     const period = await prisma.period.create({
