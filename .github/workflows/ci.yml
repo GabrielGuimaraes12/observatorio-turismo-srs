@@ -36,6 +36,7 @@ jobs:
         working-directory: backend
     env:
       DATABASE_URL: postgresql://observatorio:observatorio@localhost:5432/observatorio?schema=public
+      JWT_SECRET: ci-only-test-secret
 
     steps:
       - name: Checkout repository
@@ -62,6 +63,9 @@ jobs:
 
       - name: Test
         run: npm test
+
+      - name: Apply database migrations
+        run: npm exec prisma migrate deploy -- --config prisma7.config.ts
 
       - name: End-to-end tests
         run: npm run test:e2e
