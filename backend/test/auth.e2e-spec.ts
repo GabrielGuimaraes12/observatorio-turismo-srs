@@ -181,58 +181,109 @@ describe('Auth (e2e)', () => {
   });
 
   // ── PATCH /api/auth/promote/:id ──────────────────────────────────────────
-  describe('PATCH /api/auth/promote/:id', () => {
-    const registerUser = async (prefix: string) => {
-      const res = await request(app.getHttpServer())
-        .post('/api/auth/register')
-        .send({
-          name: 'Promote Target',
-          email: uniqueEmail(prefix),
-          password: 'Passw0rd!',
-        })
-        .expect(201);
-      createdUserIds.push(res.body.user.id);
-      return res.body.user as { id: string; role: string };
+  
+
+describe('PATCH /api/auth/promote/:id', () => {
+  let adminToken: string;
+  let userToken: string;
+
+  const registerUser = async (prefix: string) => {
+    const res = await request(app.getHttpServer())
+      .post('/api/auth/register')
+      .send({
+        name: 'Test User',
+        email: uniqueEmail(prefix),
+        password: 'Passw0rd!',
+      })
+      .expect(201);
+
+    createdUserIds.push(res.body.user.id);
+
+    return res.body as {
+      token: string;
+      user: { id: string; role: string };
     };
+  };
 
-    it('promotes a USER to ADMIN and returns the sanitized user', async () => {
-      const target = await registerUser('promote');
-      expect(target.role).toBe('USER');
+  beforeAll(async () => {
+    const admin = await registerUser('admin');
 
-      const res = await request(app.getHttpServer())
-        .patch(`/api/auth/promote/${target.id}`)
-        .expect(200);
-
-      expect(res.body).toMatchObject({ id: target.id, role: 'ADMIN' });
-      expect(res.body).not.toHaveProperty('passwordHash');
-
-      const row = await prisma.user.findUnique({ where: { id: target.id } });
-      expect(row?.role).toBe('ADMIN');
+    await prisma.user.update({
+      where: { id: admin.user.id },
+      data: { role: 'ADMIN' },
     });
 
-    it('returns 409 when the user is already an ADMIN', async () => {
-      const target = await registerUser('promote-twice');
+    adminToken = admin.token;
 
-      await request(app.getHttpServer())
-        .patch(`/api/auth/promote/${target.id}`)
-        .expect(200);
-
-      await request(app.getHttpServer())
-        .patch(`/api/auth/promote/${target.id}`)
-        .expect(409);
-    });
-
-    it('returns 404 for a non-existent user id', async () => {
-      const missing = '00000000-0000-4000-8000-000000000000';
-      await request(app.getHttpServer())
-        .patch(`/api/auth/promote/${missing}`)
-        .expect(404);
-    });
-
-    it('returns 400 for a non-UUID id', async () => {
-      await request(app.getHttpServer())
-        .patch('/api/auth/promote/not-a-uuid')
-        .expect(400);
-    });
+    const regularUser = await registerUser('regular');
+    userToken = regularUser.token;
   });
+
+  it('returns 401 without a token', async () => {
+    const target = await registerUser('no-token');
+
+    await request(app.getHttpServer())
+      .patch(`/api/auth/promote/${target.user.id}`)
+      .expect(401);
+  });
+
+  it('returns 403 for a regular USER', async () => {
+    const target = await registerUser('forbidden');
+
+    await request(app.getHttpServer())
+      .patch(`/api/auth/promote/${target.user.id}`)
+      .set('Authorization', `Bearer ${userToken}`)
+      .expect(403);
+  });
+
+  it('allows an ADMIN to promote a USER', async () => {
+    const target = await registerUser('promote');
+
+    expect(target.user.role).toBe('USER');
+
+    const res = await request(app.getHttpServer())
+      .patch(`/api/auth/promote/${target.user.id}`)
+      .set('Authorization', `Bearer ${adminToken}`)
+      .expect(200);
+
+    expect(res.body.role).toBe('ADMIN');
+
+    const updated = await prisma.user.findUnique({
+      where: { id: target.user.id },
+    });
+
+    expect(updated?.role).toBe('ADMIN');
+  });
+
+  it('returns 409 if the user is already ADMIN', async () => {
+    const target = await registerUser('already-admin');
+
+    await prisma.user.update({
+      where: { id: target.user.id },
+      data: { role: 'ADMIN' },
+    });
+
+    await request(app.getHttpServer())
+      .patch(`/api/auth/promote/${target.user.id}`)
+      .set('Authorization', `Bearer ${adminToken}`)
+      .expect(409);
+  });
+
+  it('returns 404 for a nonexistent user', async () => {
+    const missing = '00000000-0000-4000-8000-000000000000';
+
+    await request(app.getHttpServer())
+      .patch(`/api/auth/promote/${missing}`)
+      .set('Authorization', `Bearer ${adminToken}`)
+      .expect(404);
+  });
+
+  it('returns 400 for an invalid UUID', async () => {
+    await request(app.getHttpServer())
+      .patch('/api/auth/promote/not-a-uuid')
+      .set('Authorization', `Bearer ${adminToken}`)
+      .expect(400);
+  });
+});
+
 });
