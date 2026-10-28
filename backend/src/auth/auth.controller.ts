@@ -6,11 +6,14 @@ import {
   ParseUUIDPipe,
   Patch,
   Post,
-  NotFoundException,
   UnauthorizedException,
+  UseGuards,
 } from '@nestjs/common';
 import { AuthService } from './auth.service.js';
 import { UserCreateDto, UserLoginDto } from './auth.dto.js';
+import { JwtAuthGuard } from './jwt-auth.guard.js';
+import { RolesGuard } from './roles.guard.js';
+import { Roles } from './roles.decorator.js';
 
 @Controller('auth')
 export class AuthController {
@@ -32,11 +35,11 @@ export class AuthController {
   }
 
   // ToDo -> remove this and add a secure way to make user admin
+  
   @Patch('promote/:id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN')
   promote(@Param('id', new ParseUUIDPipe()) id: string) {
-    if (process.env.NODE_ENV === 'production') {
-      throw new NotFoundException();
-    }
     return this.authService.promoteToAdmin(id);
   }
 }
