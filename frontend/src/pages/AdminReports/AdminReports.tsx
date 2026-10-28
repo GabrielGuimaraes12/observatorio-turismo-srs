@@ -70,7 +70,7 @@ export function AdminReports() {
                     title: report.name,
                     description: report.description,
                     fileUrl: report.pdfUrl,
-                    published: false,
+                    published: report.published,
                 });
                 saveReportMetadata(report);
 

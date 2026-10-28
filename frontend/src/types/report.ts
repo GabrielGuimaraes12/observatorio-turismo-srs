@@ -5,4 +5,5 @@ export interface Report {
   sector: string;
   description: string;
   pdfUrl: string;
+  published: boolean;
 }

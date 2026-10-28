@@ -20,13 +20,14 @@ export function Reports() {
 }, []);
 
   const filteredReports = reports.filter((report) => {
-  const matchesPeriod =
-    selectedPeriod === 'Todos' || report.period.includes(selectedPeriod);
+    const isPublished = report.published;
+    const matchesPeriod =
+      selectedPeriod === 'Todos' || report.period.includes(selectedPeriod);
 
-  const matchesSector =
-    selectedSector === 'Todos' || report.sector.includes(selectedSector);
+    const matchesSector =
+      selectedSector === 'Todos' || report.sector.includes(selectedSector);
 
-  return matchesPeriod && matchesSector;
+    return isPublished && matchesPeriod && matchesSector;
 });
   return (
     <div className="reports-page">
