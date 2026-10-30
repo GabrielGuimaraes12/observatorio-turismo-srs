@@ -13,6 +13,8 @@ const publishedReport: Report = {
     description: 'Relatório de teste',
     pdfUrl: '/reports/relatorio.pdf',
     published: true,
+    createdAt: '2026-10-01T10:00:00.000Z',
+    updatedAt: '2026-10-10T10:00:00.000Z',
 };
 
 describe('ReportForm', () => {
