@@ -29,6 +29,7 @@ function mapApiReport(report: ApiReport): Report {
         sector: 'Todos',
         description: report.description ?? '',
         pdfUrl: report.fileUrl,
+        published: report.published
   };
 }
 

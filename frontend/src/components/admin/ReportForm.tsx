@@ -25,6 +25,7 @@ export function ReportForm({ report, onSave, onCancel }: ReportFormProps) {
             sector,
             description: description.trim(),
             pdfUrl: pdfUrl.trim(),
+            published: report?.published ?? false
         });
     }
 
