@@ -266,3 +266,48 @@
     flex-wrap: wrap;
   }
 }
+/* Status de publicação dos relatórios */
+
+.report-status {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.report-status.published {
+  background: #e6f4ec;
+  color: #247447;
+}
+
+.report-status.unpublished {
+  background: #f0f1f4;
+  color: #626b78;
+}
+/* Ações de publicação */
+
+.admin-report-actions .publication-button {
+  border-color: #cbdce5;
+  color: #315b70;
+}
+
+.admin-report-actions .publication-button:hover {
+  background: #edf4f7;
+}
+
+.admin-report-actions .publication-button.publish {
+  border-color: #b8dfc8;
+  color: #247447;
+}
+
+.admin-report-actions .publication-button.publish:hover {
+  background: #e6f4ec;
+}
+
+.admin-report-actions button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}

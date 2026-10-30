@@ -13,6 +13,7 @@ export function AdminReports() {
     const [isFormOpen, setIsFormOpen] = useState(false);
     const [isLoadingReports, setIsLoadingReports] = useState(true);
     const [reportsError, setReportsError] = useState('');
+    const [updatingPublicationId, setUpdatingPublicationId] = useState<string | null>(null);
     const navigate = useNavigate();
 
     useEffect(() => {
@@ -136,6 +137,44 @@ export function AdminReports() {
                 error instanceof Error ? error.message : 'Não foi possível excluir o relatório.');
         }
     }
+    async function handleTogglePublication(report: Report) {
+        const newPublishedStatus = !report.published;
+
+        const action = newPublishedStatus ? 'publicar' : 'retirar de publicação';
+
+        const confirmed = window.confirm(`Deseja realmente ${action} o relatório "${report.name}"?`);
+
+        if (!confirmed) {
+            return;
+        }
+
+        try {
+            setUpdatingPublicationId(report.id);
+
+            await updateReport(report.id, {
+                title: report.name,
+                description: report.description,
+                fileUrl: report.pdfUrl,
+                published: newPublishedStatus,
+            });
+
+            setReports((currentReports) =>
+                currentReports.map((currentReport) =>
+                    currentReport.id === report.id
+                        ? { ...currentReport, published: newPublishedStatus }
+                        : currentReport
+                )
+            );
+        } catch (error) {
+            window.alert(
+                error instanceof Error
+                    ? error.message
+                    : 'Não foi possível atualizar o status do relatório.'
+            );
+        } finally {
+            setUpdatingPublicationId(null);
+        }
+    }
 
 
   return (
@@ -194,6 +233,7 @@ export function AdminReports() {
                     <th>Relatório</th>
                     <th>Período</th>
                     <th>Setor</th>
+                    <th>Status</th>
                     <th>Ações</th>
                     </tr>
                 </thead>
@@ -205,12 +245,28 @@ export function AdminReports() {
                         <td>{report.period}</td>
                         <td>{report.sector}</td>
                         <td>
+                            <span className={`report-status ${report.published ? 'published' : 'unpublished'}`}>
+                                {report.published ? 'Publicado' : 'Não publicado'}
+                            </span>
+                        </td>
+                        <td>
                         <div className="admin-report-actions">
                             <button
                             type="button" onClick={() => handleEdit(report)}>
                             Editar
                             </button>
-
+                            <button
+                                type="button"
+                                className={`publication-button ${report.published ? '' : 'publish'}`}
+                                onClick={() => handleTogglePublication(report)}
+                                disabled={updatingPublicationId === report.id}
+                            >
+                                {updatingPublicationId === report.id
+                                    ? 'Atualizando...'
+                                    : report.published
+                                        ? 'Retirar de publicação'
+                                        : 'Publicar'}
+                            </button>
                             <button
                             type="button"
                             className="delete-report-button"
