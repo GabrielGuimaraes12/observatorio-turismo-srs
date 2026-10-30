@@ -33,6 +33,8 @@ const reports: Report[] = [
     description: 'Dados do turismo em 2026',
     pdfUrl: '/reports/turismo-2026.pdf',
     published: true,
+    createdAt: '2026-10-01T10:00:00.000Z',
+    updatedAt: '2026-10-10T10:00:00.000Z',
   },
   {
     id: '2',
@@ -42,6 +44,8 @@ const reports: Report[] = [
     description: 'Dados de hospedagem em 2025',
     pdfUrl: '/reports/hospedagem-2025.pdf',
     published: true,
+    createdAt: '2026-10-01T10:00:00.000Z',
+    updatedAt: '2026-10-10T10:00:00.000Z',
   },
 ];
 

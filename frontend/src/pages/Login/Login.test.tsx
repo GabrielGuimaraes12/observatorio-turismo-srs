@@ -119,4 +119,54 @@ describe('Login', () => {
       screen.queryByText('Informe seu e-mail.')
     ).not.toBeInTheDocument();
   });
+    it('mantém a senha oculta por padrão e permite mostrá-la', async () => {
+    const user = userEvent.setup();
+
+    render(
+      <MemoryRouter>
+        <Login />
+      </MemoryRouter>
+    );
+
+    const passwordInput = screen.getByLabelText('Senha');
+
+    expect(passwordInput).toHaveAttribute('type', 'password');
+
+    await user.click(
+      screen.getByRole('button', { name: 'Mostrar senha' })
+    );
+
+    expect(passwordInput).toHaveAttribute('type', 'text');
+    expect(
+      screen.getByRole('button', { name: 'Ocultar senha' })
+    ).toBeInTheDocument();
+  });
+
+  it('permite ocultar novamente a senha sem apagar o conteúdo digitado', async () => {
+    const user = userEvent.setup();
+
+    render(
+      <MemoryRouter>
+        <Login />
+      </MemoryRouter>
+    );
+
+    const passwordInput = screen.getByLabelText('Senha');
+
+    await user.type(passwordInput, 'minhaSenha123');
+
+    await user.click(
+      screen.getByRole('button', { name: 'Mostrar senha' })
+    );
+
+    expect(passwordInput).toHaveValue('minhaSenha123');
+    expect(passwordInput).toHaveAttribute('type', 'text');
+
+    await user.click(
+      screen.getByRole('button', { name: 'Ocultar senha' })
+    );
+
+    expect(passwordInput).toHaveValue('minhaSenha123');
+    expect(passwordInput).toHaveAttribute('type', 'password');
+  });
 });

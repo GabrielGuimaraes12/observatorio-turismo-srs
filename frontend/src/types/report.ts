@@ -6,4 +6,6 @@ export interface Report {
   description: string;
   pdfUrl: string;
   published: boolean;
+  createdAt: string;
+  updatedAt: string;
 }

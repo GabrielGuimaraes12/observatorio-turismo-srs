@@ -13,6 +13,7 @@ export function Login() {
 
   const [emailError, setEmailError] = useState('');
   const [passwordError, setPasswordError] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [loginError, setLoginError] = useState('');
   const [loginSuccess, setLoginSuccess] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -135,20 +136,31 @@ export function Login() {
 
             <label htmlFor="password">Senha</label>
 
-            <input
-              id="password"
-              type="password"
-              value={password}
-              onChange={(event) => {
-                setPassword(event.target.value);
-                setPasswordError('');
-                setLoginError('');
-                setLoginSuccess('');
-              }}
-              placeholder="Digite sua senha"
-              disabled={isLoading}
-            />
-
+            <div className="password-input-container">
+              <input
+                id="password"
+                type={showPassword ? 'text' : 'password'}
+                value={password}
+                onChange={(event) => {
+                  setPassword(event.target.value);
+                  setPasswordError('');
+                  setLoginError('');
+                  setLoginSuccess('');
+                }}
+                placeholder="Digite sua senha"
+                disabled={isLoading}
+              />
+              <button
+                type="button"
+                className="toggle-password-visibility"
+                onClick={() => setShowPassword((visible) => !visible)}
+                aria-label={showPassword ? 'Ocultar senha' : 'Mostrar senha'}
+                aria-pressed={showPassword}
+                disabled={isLoading}
+                >
+                  {showPassword ? 'Ocultar' : 'Mostrar'}
+                </button>
+            </div>
             {passwordError && (
               <span className="login-error">
                 {passwordError}
