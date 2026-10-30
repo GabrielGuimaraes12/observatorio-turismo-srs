@@ -4,6 +4,7 @@ import type { Report } from '../../types/report';
 import { ReportForm } from '../../components/admin/ReportForm';
 import { getReports, createReport, updateReport, deleteReport } from '../../services/reportService';
 import { applyReportMetadata, saveReportMetadata } from '../../services/reportMetadataStorage';
+import { AdminSummaryCards } from '../../components/admin/AdminSummaryCards';
 import './AdminReports.css';
 
 export function AdminReports() {
@@ -168,6 +169,9 @@ export function AdminReports() {
         </section>
       ) : (
         <section className="admin-reports-list">
+            <AdminSummaryCards reports={reports}
+                isLoading={isLoadingReports}
+                hasError={!!reportsError} />
             <h2>Relatórios cadastrados ({reports.length})</h2>
 
             {isLoadingReports ? (

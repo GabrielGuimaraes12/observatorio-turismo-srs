@@ -9,6 +9,8 @@ interface ApiReport {
     description: string | null;
     fileUrl: string;
     published: boolean;
+    createdAt: string;
+    updatedAt: string;
     periodId: string | null;
     period?: {
         id: string;
@@ -29,7 +31,9 @@ function mapApiReport(report: ApiReport): Report {
         sector: 'Todos',
         description: report.description ?? '',
         pdfUrl: report.fileUrl,
-        published: report.published
+        published: report.published,
+        createdAt: report.createdAt,
+        updatedAt: report.updatedAt
   };
 }
 
