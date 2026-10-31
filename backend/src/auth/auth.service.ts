@@ -1,12 +1,14 @@
 import {
+  BadRequestException,
   ConflictException,
+  ForbiddenException,
   Injectable,
-  NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { JwtTokenService } from './jwt.service.js';
+import { InvitationService } from './invitation.service.js';
 
 const SALT_ROUNDS = 10;
 
@@ -15,6 +17,7 @@ export class AuthService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly jwt: JwtTokenService,
+    private readonly invitations: InvitationService,
   ) {}
 
   private serializeUser(user: {
@@ -41,15 +44,53 @@ export class AuthService {
     return bcrypt.compare(plain, hash);
   }
 
-  async register(name: string, email: string, password: string) {
-    const existing = await this.prisma.user.findUnique({ where: { email } });
+  async register(
+    name: string,
+    email: string,
+    password: string,
+    confirmPassword: string,
+    invitationToken?: string,
+  ) {
+    if (password !== confirmPassword) {
+      throw new BadRequestException('Password and confirmation do not match');
+    }
+
+    const normalizedEmail = email.trim().toLowerCase();
+
+    if (!invitationToken) {
+      const existing = await this.prisma.user.findUnique({ where: { email: normalizedEmail } });
+      if (existing) {
+        throw new ConflictException('Email already registered');
+      }
+
+      const passwordHash = await this.hashPassword(password);
+      const user = await this.prisma.user.create({
+        data: { name, email: normalizedEmail, passwordHash, role: 'USER' },
+      });
+
+      const token = this.jwt.createToken(user.id);
+      return { token, user: this.serializeUser(user) };
+    }
+
+    const { role } = await this.invitations.consume(invitationToken, normalizedEmail);
+
+    const existing = await this.prisma.user.findUnique({ where: { email: normalizedEmail } });
     if (existing) {
       throw new ConflictException('Email already registered');
     }
 
     const passwordHash = await this.hashPassword(password);
     const user = await this.prisma.user.create({
-      data: { name, email, passwordHash },
+      data: { name, email: normalizedEmail, passwordHash, role },
+    });
+
+    await this.prisma.changeLog.create({
+      data: {
+        action: `register-${role.toLowerCase()}`,
+        entity: 'User',
+        entityId: user.id,
+        userId: null,
+      },
     });
 
     const token = this.jwt.createToken(user.id);
@@ -57,7 +98,9 @@ export class AuthService {
   }
 
   async login(email: string, password: string) {
-    const user = await this.prisma.user.findUnique({ where: { email } });
+    const user = await this.prisma.user.findUnique({
+      where: { email: email.trim().toLowerCase() },
+    });
     if (!user) {
       throw new UnauthorizedException('Invalid credentials');
     }
@@ -69,23 +112,5 @@ export class AuthService {
 
     const token = this.jwt.createToken(user.id);
     return { token, user: this.serializeUser(user) };
-  }
-
-  async promoteToAdmin(id: string) {
-    const user = await this.prisma.user.findUnique({ where: { id } });
-    if (!user) {
-      throw new NotFoundException(`User ${id} not found`);
-    }
-
-    if (user.role === 'ADMIN') {
-      throw new ConflictException(`User ${id} is already an ADMIN`);
-    }
-
-    const updated = await this.prisma.user.update({
-      where: { id },
-      data: { role: 'ADMIN' },
-    });
-
-    return this.serializeUser(updated);
   }
 }
