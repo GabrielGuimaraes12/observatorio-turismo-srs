@@ -2,6 +2,7 @@ import { NestFactory } from '@nestjs/core';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { ValidationPipe } from '@nestjs/common';
 import { AppModule } from './app.module.js';
+import { buildSwaggerConfig } from './swagger.config.js';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -20,15 +21,9 @@ async function bootstrap() {
     }),
   );
 
-  const swaggerConfig = new DocumentBuilder()
-    .setTitle('Observatório do Turismo SRS API')
-    .setDescription('API da plataforma do Observatório do Turismo de Santa Rita do Sapucaí')
-    .setVersion('1.0')
-    .build();
-
+  const config = buildSwaggerConfig();
   const documentFactory = () =>
-    SwaggerModule.createDocument(app, swaggerConfig);
-
+    SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api/docs', app, documentFactory);
 
   await app.listen(process.env.PORT ?? 3000);
