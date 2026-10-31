@@ -15,11 +15,19 @@ import { CreateInvitationDto } from './auth.dto.js';
 import { JwtAuthGuard } from './jwt-auth.guard.js';
 import { RolesGuard } from './roles.guard.js';
 import { Roles } from './roles.decorator.js';
+import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import {
+  ApiCreateInvitation,
+  ApiListInvitations,
+  ApiRevokeInvitation,
+} from './invitations.openapi.js';
 
 interface AuthedRequest {
   user: { id: string; role: string };
 }
 
+@ApiTags('Invitations')
+@ApiBearerAuth('JWT-auth')
 @Controller('invitations')
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class InvitationsController {
@@ -27,6 +35,7 @@ export class InvitationsController {
 
   @Post()
   @Roles('HR', 'ADMIN')
+  @ApiCreateInvitation()
   create(@Body() body: CreateInvitationDto, @Req() req: AuthedRequest) {
     if (req.user.role === 'ADMIN' && body.role !== 'BUSINESS') {
       throw new ForbiddenException('Admins can only invite BUSINESS accounts');
@@ -44,12 +53,14 @@ export class InvitationsController {
 
   @Get()
   @Roles('HR', 'ADMIN')
+  @ApiListInvitations()
   list(@Req() req: AuthedRequest) {
     return this.invitations.listFor(req.user.id);
   }
 
   @Delete(':id')
   @Roles('HR', 'ADMIN')
+  @ApiRevokeInvitation()
   revoke(
     @Param('id', new ParseUUIDPipe()) id: string,
     @Req() req: AuthedRequest,
