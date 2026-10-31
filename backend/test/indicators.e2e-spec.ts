@@ -52,11 +52,13 @@ describe('Indicators (e2e)', () => {
     const user = await register('Regular User', uniqueEmail('user'));
     userToken = user.token;
 
-    // admin (registra + promove)
+    // admin (registra e promove direto no banco — Solução 1)
     const admin = await register('Admin User', uniqueEmail('admin'));
-    await request(app.getHttpServer())
-      .patch(`/api/auth/promote/${admin.user.id}`)
-      .expect(200);
+
+    await prisma.user.update({
+      where: { id: admin.user.id },
+      data: { role: 'ADMIN' },
+    });
 
     const adminRow = await prisma.user.findUnique({ where: { id: admin.user.id } });
     expect(adminRow?.role).toBe('ADMIN');
