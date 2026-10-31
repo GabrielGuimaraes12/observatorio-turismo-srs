@@ -17,7 +17,6 @@ export class AuthController {
       body.name,
       body.email,
       body.password,
-      body.confirmPassword,
       body.invitationToken,
     );
   }

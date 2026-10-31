@@ -25,9 +25,6 @@ export class UserCreateDto {
   })
   password: string;
 
-  @IsString()
-  confirmPassword: string;
-
   @IsOptional()
   @IsString()
   @MinLength(1)

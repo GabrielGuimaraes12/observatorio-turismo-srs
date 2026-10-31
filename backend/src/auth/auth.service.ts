@@ -48,13 +48,8 @@ export class AuthService {
     name: string,
     email: string,
     password: string,
-    confirmPassword: string,
     invitationToken?: string,
   ) {
-    if (password !== confirmPassword) {
-      throw new BadRequestException('Password and confirmation do not match');
-    }
-
     const normalizedEmail = email.trim().toLowerCase();
 
     if (!invitationToken) {
@@ -72,12 +67,12 @@ export class AuthService {
       return { token, user: this.serializeUser(user) };
     }
 
-    const { role } = await this.invitations.consume(invitationToken, normalizedEmail);
-
     const existing = await this.prisma.user.findUnique({ where: { email: normalizedEmail } });
     if (existing) {
       throw new ConflictException('Email already registered');
     }
+
+    const { role } = await this.invitations.consume(invitationToken, normalizedEmail);
 
     const passwordHash = await this.hashPassword(password);
     const user = await this.prisma.user.create({
