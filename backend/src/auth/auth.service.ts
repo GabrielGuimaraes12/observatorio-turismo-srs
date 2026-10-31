@@ -104,6 +104,10 @@ export class AuthService {
     if (!ok) {
       throw new UnauthorizedException('Invalid credentials');
     }
+    
+    if (!user.isActive) {
+      throw new UnauthorizedException('Account is deactivated');
+    }
 
     const token = this.jwt.createToken(user.id);
     return { token, user: this.serializeUser(user) };
