@@ -1,4 +1,13 @@
-import { IsEmail, IsString, Length, Matches, MinLength } from 'class-validator';
+import { Transform } from 'class-transformer';
+import {
+  IsEmail,
+  IsIn,
+  IsOptional,
+  IsString,
+  Length,
+  Matches,
+  MinLength,
+} from 'class-validator';
 
 export class UserCreateDto {
   @IsString()
@@ -16,6 +25,12 @@ export class UserCreateDto {
     message: 'A senha deve conter ao menos um caractere especial (!@#$%^&*)',
   })
   password: string;
+
+  @IsOptional()
+  @Transform(({ value }) => (typeof value === 'string' && value.trim() === '' ? undefined : value))
+  @IsString()
+  @MinLength(1)
+  invitationToken?: string;
 }
 
 export class UserLoginDto {
@@ -24,4 +39,12 @@ export class UserLoginDto {
 
   @IsString()
   password: string;
+}
+
+export class CreateInvitationDto {
+  @IsEmail()
+  email: string;
+
+  @IsIn(['HR', 'ADMIN', 'BUSINESS'])
+  role: 'HR' | 'ADMIN' | 'BUSINESS';
 }
