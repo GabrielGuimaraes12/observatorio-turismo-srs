@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi, Mock } from 'vitest';
-import { BadRequestException, UnauthorizedException } from '@nestjs/common';
+import { ConflictException, UnauthorizedException } from '@nestjs/common';
 import { AuthController } from './auth.controller.js';
 import { AuthService } from './auth.service.js';
 
@@ -13,14 +13,13 @@ describe('AuthController', () => {
   beforeEach(() => {
     authService = { register: vi.fn(), login: vi.fn() };
     controller = new AuthController(authService as unknown as AuthService);
-    vi.spyOn(console, 'error').mockImplementation(() => {});
   });
 
   afterEach(() => vi.restoreAllMocks());
 
   describe('register', () => {
-    it('delegates to AuthService with the DTO fields', async () => {
-      const payload = { token: 't', user: { id: '1' } };
+    it('delegates to AuthService with name, email, password and no invitation token', async () => {
+      const payload = { token: 't', user: { id: '1', role: 'USER' } };
       authService.register.mockResolvedValue(payload);
 
       const result = await controller.register({
@@ -33,29 +32,58 @@ describe('AuthController', () => {
         'Alice',
         'a@b.com',
         'Passw0rd!',
+        undefined,
       );
       expect(result).toBe(payload);
+    });
+
+    it('forwards the invitation token when present', async () => {
+      const payload = { token: 't', user: { id: '1', role: 'ADMIN' } };
+      authService.register.mockResolvedValue(payload);
+
+      await controller.register({
+        name: 'Alice',
+        email: 'a@b.com',
+        password: 'Passw0rd!',
+        invitationToken: 'invite-abc',
+      });
+
+      expect(authService.register).toHaveBeenCalledWith(
+        'Alice',
+        'a@b.com',
+        'Passw0rd!',
+        'invite-abc',
+      );
+    });
+
+    it('propagates service errors unchanged', async () => {
+      const err = new ConflictException('Email already registered');
+      authService.register.mockRejectedValue(err);
+
+      await expect(
+        controller.register({ name: 'Alice', email: 'a@b.com', password: 'Passw0rd!' }),
+      ).rejects.toBe(err);
     });
   });
 
   describe('login', () => {
-    it('returns the service result on success', async () => {
+    it('delegates to AuthService with email and password', async () => {
       const payload = { token: 't', user: { id: '1' } };
       authService.login.mockResolvedValue(payload);
 
-      await expect(
-        controller.login({ email: 'a@b.com', password: 'x' }),
-      ).resolves.toBe(payload);
+      const result = await controller.login({ email: 'a@b.com', password: 'x' });
 
       expect(authService.login).toHaveBeenCalledWith('a@b.com', 'x');
+      expect(result).toBe(payload);
     });
 
-    it('wraps service errors in UnauthorizedException', async () => {
-      authService.login.mockRejectedValue(new Error('Invalid credentials'));
+    it('propagates service errors unchanged', async () => {
+      const err = new UnauthorizedException('Invalid credentials');
+      authService.login.mockRejectedValue(err);
 
       await expect(
         controller.login({ email: 'a@b.com', password: 'x' }),
-      ).rejects.toBeInstanceOf(UnauthorizedException);
+      ).rejects.toBe(err);
     });
   });
 });
