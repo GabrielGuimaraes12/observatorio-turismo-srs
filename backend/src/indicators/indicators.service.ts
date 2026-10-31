@@ -14,6 +14,15 @@ export class IndicatorService {
     });
   }
 
+
+  async findPublished() {
+  return this.prisma.indicator.findMany({
+    where: { published: true },
+    orderBy: { createdAt: 'desc' },
+    include: { sector: true, period: true },
+  });
+  }
+
   async findOne(id: string) {
     const indicator = await this.prisma.indicator.findUnique({
       where: { id },

@@ -21,11 +21,20 @@ export class IndicatorController {
   constructor(private readonly indicatorService: IndicatorService) {}
 
   @Get()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN')
   findAll() {
     return this.indicatorService.findAll();
   }
 
+  @Get('public')
+  findPublished() {
+    return this.indicatorService.findPublished();
+  }
+
   @Get(':id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN')
   findOne(@Param('id', new ParseUUIDPipe()) id: string) {
     return this.indicatorService.findOne(id);
   }
