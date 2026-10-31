@@ -62,7 +62,6 @@ describe('Indicators (e2e)', () => {
     expect(adminRow?.role).toBe('ADMIN');
 
     adminToken = admin.token;
-
     // dependências do Indicator: sector + period
     const sector = await prisma.sector.create({
       data: { name: `e2e-sector-${Date.now()}` },
