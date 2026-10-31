@@ -63,7 +63,8 @@ const publishedReport: Report = {
 
 describe('AdminReports', () => {
     beforeEach(() => {
-        vi.clearAllMocks();
+        vi.restoreAllMocks();
+        vi.resetAllMocks();
         getReportsMock.mockResolvedValue([{ ...publishedReport }]);
         updateReportMock.mockResolvedValue(undefined);
         deleteReportMock.mockResolvedValue(undefined);
@@ -193,5 +194,112 @@ describe('AdminReports', () => {
         );
 
         expect(getReportsMock).toHaveBeenCalledTimes(1);
+    });
+        it('publica um relatório não publicado', async () => {
+            const user = userEvent.setup();
+
+            const unpublishedReport = {
+                ...publishedReport,
+                published: false,
+            };
+
+            getReportsMock.mockResolvedValue([unpublishedReport]);
+            vi.spyOn(window, 'confirm').mockReturnValue(true);
+
+            render(
+                <MemoryRouter>
+                    <AdminReports />
+                </MemoryRouter>,
+            );
+
+            await screen.findByText('Não publicado');
+
+            await user.click(screen.getByRole('button', { name: 'Publicar' }));
+
+            await waitFor(() => {
+                expect(updateReportMock).toHaveBeenCalledWith('report-1', {
+                    title: 'Relatório publicado',
+                    description: 'Relatório de teste',
+                    fileUrl: '/reports/relatorio.pdf',
+                    published: true,
+                });
+            });
+
+            expect(await screen.findByText('Publicado')).toBeInTheDocument();
+        });
+
+    it('retira um relatório de publicação', async () => {
+        const user = userEvent.setup();
+
+        vi.spyOn(window, 'confirm').mockReturnValue(true);
+
+        render(
+            <MemoryRouter>
+                <AdminReports />
+            </MemoryRouter>,
+        );
+
+        await screen.findByText('Publicado');
+
+        await user.click(screen.getByRole('button', { name: 'Retirar de publicação' }),);
+
+        await waitFor(() => {
+            expect(updateReportMock).toHaveBeenCalledWith('report-1', {
+                title: 'Relatório publicado',
+                description: 'Relatório de teste',
+                fileUrl: '/reports/relatorio.pdf',
+                published: false,
+            });
+        });
+
+        expect(await screen.findByText('Não publicado')).toBeInTheDocument();
+    });
+
+    it('não altera a publicação quando a confirmação é cancelada', async () => {
+        const user = userEvent.setup();
+
+        const confirmMock = vi.spyOn(window, 'confirm').mockReturnValue(false);
+
+        render(
+            <MemoryRouter>
+                <AdminReports />
+            </MemoryRouter>,
+        );
+
+        await screen.findByText('Publicado');
+
+        await user.click(screen.getByRole('button', { name: 'Retirar de publicação' }),);
+
+        expect(confirmMock).toHaveBeenCalled();
+        expect(updateReportMock).not.toHaveBeenCalled();
+        expect(screen.getByText('Publicado')).toBeInTheDocument();
+    });
+
+    it('mantém o status original quando a atualização da publicação falha', async () => {
+        const user = userEvent.setup();
+        const alertMock = vi.spyOn(window, 'alert').mockImplementation(() => {});
+
+        vi.spyOn(window, 'confirm').mockReturnValue(true);
+
+        updateReportMock.mockRejectedValueOnce(new Error('Falha ao atualizar publicação'),);
+
+        render(
+            <MemoryRouter>
+                <AdminReports />
+            </MemoryRouter>,
+        );
+
+        await screen.findByText('Publicado');
+
+        await user.click(screen.getByRole('button', { name: 'Retirar de publicação' }),);
+
+        await waitFor(() => {
+            expect(alertMock).toHaveBeenCalledWith(
+                'Falha ao atualizar publicação',
+            );
+        });
+
+        expect(screen.getByText('Publicado')).toBeInTheDocument();
+        expect(screen.queryByText('Não publicado')).not.toBeInTheDocument();
     });
 });
