@@ -12,13 +12,10 @@ async function bootstrap() {
     origin: 'http://localhost:5173',
   });
 
-  app.useGlobalPipes(
-    new ValidationPipe({
-      whitelist: true,
-      forbidNonWhitelisted: true,
-      transform: true,
-    }),
-  );
+  app.useGlobalPipes(new ValidationPipe({
+    transform: true, 
+    whitelist: true, 
+  }));
 
   const swaggerConfig = new DocumentBuilder()
     .setTitle('Observatório do Turismo SRS API')

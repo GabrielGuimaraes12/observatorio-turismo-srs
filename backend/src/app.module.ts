@@ -8,6 +8,7 @@ import { ReportsModule } from './report/reports.module.js';
 import { SectorModule } from './sectors/sectors.module.js';
 import { PeriodModule } from './periods/periods.module.js';
 import { IndicatorModule } from './indicators/indicators.module.js';
+import { UploadModule } from './upload-PDF/upload.module.js';
 
 @Module({
   imports: [
@@ -21,6 +22,7 @@ import { IndicatorModule } from './indicators/indicators.module.js';
     SectorModule,
     PeriodModule,
     IndicatorModule,
+    UploadModule,
   ],
 })
 export class AppModule {}
