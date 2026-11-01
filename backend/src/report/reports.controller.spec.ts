@@ -81,17 +81,19 @@ describe('ReportsController', () => {
     const dto = { title: 'Renamed' };
     const updated = { id: 'r1', title: 'Renamed' };
     service.update.mockResolvedValue(updated);
+    const req = { user: { id: 'user-business-1', role: 'BUSINESS' } };
 
-    await expect(controller.update('r1', dto)).resolves.toBe(updated);
-    expect(service.update).toHaveBeenCalledWith('r1', dto);
+    await expect(controller.update('r1', dto, req)).resolves.toBe(updated);
+    expect(service.update).toHaveBeenCalledWith('r1', dto, req.user);
   });
 
-  it('remove delegates with the id', async () => {
+  it('remove delegates with the id and the requester', async () => {
     const res = { success: true, id: 'r1' };
     service.remove.mockResolvedValue(res);
-
-    await expect(controller.remove('r1')).resolves.toBe(res);
-    expect(service.remove).toHaveBeenCalledWith('r1');
+    const req = { user: { id: 'user-business-1', role: 'BUSINESS' } };
+  
+    await expect(controller.remove('r1', req)).resolves.toBe(res);
+    expect(service.remove).toHaveBeenCalledWith('r1', req.user);
   });
 });
 

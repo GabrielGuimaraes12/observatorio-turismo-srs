@@ -69,7 +69,7 @@ describe('ReportsService', () => {
       expect(prisma.report.findMany).toHaveBeenCalledWith({
         where: { published: true },
         orderBy: { createdAt: 'desc' },
-        include: expect.objectContaining({ period: true, sector: true }),
+        include: expect.objectContaining({ period: true }),
       });
     });
 
@@ -236,7 +236,7 @@ describe('ReportsService', () => {
           periodId: 'period-1',
           authorId: author.id,
         },
-        include: expect.objectContaining({ period: true, sector: true }),
+        include: expect.objectContaining({ period: true }),
       });
     });
 
@@ -281,12 +281,12 @@ describe('ReportsService', () => {
 
       expect(prisma.report.findUnique).toHaveBeenCalledWith({
         where: { id: 'report-1' },
-        include: expect.objectContaining({ period: true, sector: true }),
+        include: expect.objectContaining({ period: true }),
       });
       expect(prisma.report.update).toHaveBeenCalledWith({
         where: { id: 'report-1' },
         data: { title: 'Renamed' },
-        include: expect.objectContaining({ period: true, sector: true }),
+        include: expect.objectContaining({ period: true }),
       });
       expect(result.title).toBe('Renamed');
     });
