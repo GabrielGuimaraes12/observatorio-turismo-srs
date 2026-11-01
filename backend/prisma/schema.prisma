@@ -18,6 +18,7 @@ model User {
 
   changes ChangeLog[]
   invitationsCreated Invitation[] @relation("CreatedInvitations")
+  reportsAuthored Report[] @relation("ReportAuthor")
 }
 
 model Invitation {
@@ -85,6 +86,9 @@ model Report {
 
   periodId String?
   period   Period? @relation(fields: [periodId], references: [id])
+
+  authorId String?
+  author   User?  @relation("ReportAuthor", fields: [authorId], references: [id])
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
