@@ -69,8 +69,9 @@ export class ReportsController {
   update(
     @Param('id', new ParseUUIDPipe()) id: string,
     @Body() dto: UpdateReportDto,
+    @Req() req: AuthedRequest,
   ) {
-    return this.reportsService.update(id, dto);
+    return this.reportsService.update(id, dto, req.user);
   }
 
   @Delete(':id')
@@ -78,7 +79,10 @@ export class ReportsController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('ADMIN')
   @ApiDeleteReport()
-  remove(@Param('id', new ParseUUIDPipe()) id: string) {
-    return this.reportsService.remove(id);
+  remove(
+    @Param('id', new ParseUUIDPipe()) id: string,
+    @Req() req: AuthedRequest,
+  ) {
+    return this.reportsService.remove(id, req.user);
   }
 }

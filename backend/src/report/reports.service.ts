@@ -10,7 +10,6 @@ interface Requester {
 
 const reportInclude = {
   period: true,
-  sector: true,
   author: {
     select: { id: true, name: true, email: true },
   },
@@ -80,8 +79,8 @@ export class ReportsService {
     });
   }
 
-  async update(id: string, dto: UpdateReportDto) {
-    await this.findOne(id);
+  async update(id: string, dto: UpdateReportDto, requester?: Requester) {
+    await this.findOne(id, requester);
     return this.prisma.report.update({
       where: { id },
       data: Object.fromEntries(
@@ -90,9 +89,9 @@ export class ReportsService {
       include: reportInclude,
     });
   }
-
-  async remove(id: string) {
-    await this.findOne(id);
+  
+  async remove(id: string, requester?: Requester) {
+    await this.findOne(id, requester);
     await this.prisma.report.delete({ where: { id } });
     return { success: true, id };
   }
