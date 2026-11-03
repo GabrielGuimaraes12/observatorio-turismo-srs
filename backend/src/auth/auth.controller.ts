@@ -2,44 +2,33 @@ import {
   Body,
   Controller,
   HttpCode,
-  Param,
-  ParseUUIDPipe,
-  Patch,
   Post,
-  UnauthorizedException,
-  UseGuards,
 } from '@nestjs/common';
+import { ApiTags } from '@nestjs/swagger';
 import { AuthService } from './auth.service.js';
 import { UserCreateDto, UserLoginDto } from './auth.dto.js';
-import { JwtAuthGuard } from './jwt-auth.guard.js';
-import { RolesGuard } from './roles.guard.js';
-import { Roles } from './roles.decorator.js';
+import { ApiRegister, ApiLogin } from './auth.openapi.js';
 
+@ApiTags('Auth')
 @Controller('auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
   @Post('register')
+  @ApiRegister()
   register(@Body() body: UserCreateDto) {
-    return this.authService.register(body.name, body.email, body.password);
+    return this.authService.register(
+      body.name,
+      body.email,
+      body.password,
+      body.invitationToken,
+    );
   }
 
   @Post('login')
   @HttpCode(200)
-  async login(@Body() body: UserLoginDto) {
-    try {
-      return await this.authService.login(body.email, body.password);
-    } catch (e) {
-      throw new UnauthorizedException((e as Error).message);
-    }
-  }
-
-  // ToDo -> remove this and add a secure way to make user admin
-  
-  @Patch('promote/:id')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('ADMIN')
-  promote(@Param('id', new ParseUUIDPipe()) id: string) {
-    return this.authService.promoteToAdmin(id);
+  @ApiLogin()
+  login(@Body() body: UserLoginDto) {
+    return this.authService.login(body.email, body.password);
   }
 }

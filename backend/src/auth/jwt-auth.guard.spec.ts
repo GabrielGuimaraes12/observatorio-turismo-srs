@@ -58,9 +58,20 @@ describe('JwtAuthGuard', () => {
     await expect(guard.canActivate(ctx)).rejects.toThrow('User not found');
   });
 
+  it('throws when the user is deactivated', async () => {
+    jwt.getUserId.mockReturnValue('user-1');
+    prisma.user.findUnique.mockResolvedValue({
+      id: 'user-1',
+      role: 'ADMIN',
+      isActive: false,
+    });
+    const { ctx } = makeContext({ authorization: 'Bearer abc' });
+    await expect(guard.canActivate(ctx)).rejects.toThrow('Account is deactivated');
+  });
+
   it('attaches the user to the request and returns true', async () => {
     jwt.getUserId.mockReturnValue('user-1');
-    const user = { id: 'user-1', role: 'ADMIN' };
+    const user = { id: 'user-1', role: 'ADMIN', isActive: true };
     prisma.user.findUnique.mockResolvedValue(user);
 
     const { ctx, request } = makeContext({ authorization: 'Bearer abc' });

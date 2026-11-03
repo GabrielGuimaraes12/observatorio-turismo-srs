@@ -1,8 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Get a free hosted Postgres database in seconds: `npx create-db`
-
 generator client {
   provider = "prisma-client"
   output   = "../src/generated/prisma"
@@ -17,10 +12,29 @@ model User {
   email        String   @unique
   passwordHash String
   role         String   @default("USER")
+  isActive     Boolean  @default(true)
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
   changes ChangeLog[]
+  invitationsCreated Invitation[] @relation("CreatedInvitations")
+  reportsAuthored Report[] @relation("ReportAuthor")
+}
+
+model Invitation {
+  id          String    @id @default(uuid())
+  tokenHash   String    @unique
+  email       String
+  role        String
+  expiresAt   DateTime
+  usedAt      DateTime?
+  createdAt   DateTime  @default(now())
+
+  createdById String?
+  createdBy   User?     @relation("CreatedInvitations", fields: [createdById], references: [id])
+
+  @@index([email])
+  @@index([expiresAt])
 }
 
 model Sector {
@@ -72,6 +86,9 @@ model Report {
 
   periodId String?
   period   Period? @relation(fields: [periodId], references: [id])
+
+  authorId String?
+  author   User?  @relation("ReportAuthor", fields: [authorId], references: [id])
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

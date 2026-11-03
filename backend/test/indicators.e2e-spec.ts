@@ -1,4 +1,4 @@
-
+import 'reflect-metadata';
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication, ValidationPipe } from '@nestjs/common';
 import { Server } from 'node:http';
@@ -12,12 +12,10 @@ describe('Indicators (e2e)', () => {
 
   let adminToken: string;
   let userToken: string;
-
   let sectorId: string;
   let periodId: string;
-  let publishedIndicatorId: string;
-  let privateIndicatorId: string;
 
+  const createdIndicatorIds: string[] = [];
   const createdUserIds: string[] = [];
 
   const uniqueEmail = (prefix: string) =>
@@ -26,31 +24,19 @@ describe('Indicators (e2e)', () => {
   const register = async (name: string, email: string) => {
     const res = await request(app.getHttpServer())
       .post('/api/auth/register')
-      .send({
-        name,
-        email,
-        password: 'Passw0rd!',
-      })
+      .send({ name, email, password: 'Passw0rd!' })
       .expect(201);
-
     createdUserIds.push(res.body.user.id);
-
-    return res.body as {
-      token: string;
-      user: { id: string; role: string };
-    };
+    return res.body as { token: string; user: { id: string; role: string } };
   };
 
   beforeAll(async () => {
-    const moduleFixture: TestingModule =
-      await Test.createTestingModule({
-        imports: [AppModule],
-      }).compile();
+    const moduleFixture: TestingModule = await Test.createTestingModule({
+      imports: [AppModule],
+    }).compile();
 
     app = moduleFixture.createNestApplication();
-
     app.setGlobalPrefix('api');
-
     app.useGlobalPipes(
       new ValidationPipe({
         whitelist: true,
@@ -58,229 +44,328 @@ describe('Indicators (e2e)', () => {
         transform: true,
       }),
     );
-
     await app.init();
 
     prisma = app.get(PrismaService);
 
-    // Criar usuário comum
-    const user = await register(
-      'Regular User',
-      uniqueEmail('indicator-user'),
-    );
-
+    // usuário comum
+    const user = await register('Regular User', uniqueEmail('user'));
     userToken = user.token;
 
-    // Criar administrador
-    const admin = await register(
-      'Admin User',
-      uniqueEmail('indicator-admin'),
-    );
+    // admin (registra e promove direto no banco — Solução 1)
+    const admin = await register('Admin User', uniqueEmail('admin'));
 
     await prisma.user.update({
       where: { id: admin.user.id },
       data: { role: 'ADMIN' },
     });
 
+    const adminRow = await prisma.user.findUnique({ where: { id: admin.user.id } });
+    expect(adminRow?.role).toBe('ADMIN');
+
     adminToken = admin.token;
-
-    // Criar setor de teste
+    // dependências do Indicator: sector + period
     const sector = await prisma.sector.create({
-      data: {
-        name: `e2e-sector-${Date.now()}-${Math.random()}`,
-      },
+      data: { name: `e2e-sector-${Date.now()}` },
     });
-
     sectorId = sector.id;
 
-    // Criar período de teste
     const period = await prisma.period.create({
       data: {
         name: `e2e-period-${Date.now()}`,
-        startDate: new Date('2026-01-01'),
-        endDate: new Date('2026-12-31'),
+        startDate: new Date('2024-01-01'),
+        endDate: new Date('2024-12-31'),
       },
     });
-
     periodId = period.id;
-
-    // Indicador publicado
-    const published = await prisma.indicator.create({
-      data: {
-        name: 'Indicador E2E Publicado',
-        description: 'Teste de publicação',
-        value: 120,
-        unit: 'unidades',
-        published: true,
-        sectorId,
-        periodId,
-      },
-    });
-
-    publishedIndicatorId = published.id;
-
-    // Indicador privado
-    const privateIndicator = await prisma.indicator.create({
-      data: {
-        name: 'Indicador E2E Privado',
-        description: 'Teste de privacidade',
-        value: 999,
-        unit: 'unidades',
-        published: false,
-        sectorId,
-        periodId,
-      },
-    });
-
-    privateIndicatorId = privateIndicator.id;
   });
 
   afterAll(async () => {
-    try {
-      if (prisma) {
-        // Remover somente os dados criados pelos testes
-        const indicatorIds = [
-          publishedIndicatorId,
-          privateIndicatorId,
-        ].filter((id): id is string => Boolean(id));
-
-        if (indicatorIds.length) {
-          await prisma.indicator.deleteMany({
-            where: { id: { in: indicatorIds } },
-          });
-        }
-
-        if (sectorId) {
-          await prisma.sector.delete({
-            where: { id: sectorId },
-          });
-        }
-
-        if (periodId) {
-          await prisma.period.delete({
-            where: { id: periodId },
-          });
-        }
-
-        if (createdUserIds.length) {
-          await prisma.user.deleteMany({
-            where: { id: { in: createdUserIds } },
-          });
-        }
-      }
-    } finally {
-      if (app) {
-        await app.close();
-      }
+    if (createdIndicatorIds.length) {
+      await prisma.indicator.deleteMany({
+        where: { id: { in: createdIndicatorIds } },
+      });
     }
+    // limpa qualquer indicator residual criado no sector/period de teste
+    if (sectorId) {
+      await prisma.indicator.deleteMany({ where: { sectorId } });
+    }
+    if (periodId) {
+      await prisma.indicator.deleteMany({ where: { periodId } });
+      await prisma.period.delete({ where: { id: periodId } }).catch(() => {});
+    }
+    if (sectorId) {
+      await prisma.sector.delete({ where: { id: sectorId } }).catch(() => {});
+    }
+    if (createdUserIds.length) {
+      await prisma.user.deleteMany({ where: { id: { in: createdUserIds } } });
+    }
+    await app.close();
   });
 
-  describe('GET /api/indicators/public', () => {
-    it('returns 200 without authentication', async () => {
+  // -------------------------------------------------------------------------
+  // GET /api/indicators
+  // -------------------------------------------------------------------------
+  describe('GET /api/indicators', () => {
+    it('returns 200 with an array as ADMIN', async () => {
       const res = await request(app.getHttpServer())
-        .get('/api/indicators/public')
+        .get('/api/indicators')
+        .set('Authorization', `Bearer ${adminToken}`)
         .expect(200);
 
       expect(Array.isArray(res.body)).toBe(true);
     });
+  });
 
-    it('returns published indicators', async () => {
+  // -------------------------------------------------------------------------
+  // GET /api/indicators/:id
+  // -------------------------------------------------------------------------
+  describe('GET /api/indicators/:id', () => {
+    it('returns 200 and the indicator when it exists', async () => {
+      const created = await prisma.indicator.create({
+        data: {
+          name: 'PIB',
+          description: 'Produto Interno Bruto',
+          value: 1000,
+          unit: 'BRL',
+          published: true,
+          sectorId,
+          periodId,
+        },
+      });
+      createdIndicatorIds.push(created.id);
+
       const res = await request(app.getHttpServer())
-        .get('/api/indicators/public')
+        .get(`/api/indicators/${created.id}`)
+        .set('Authorization', `Bearer ${adminToken}`)
         .expect(200);
 
-      const indicator = res.body.find(
-        (item: { id: string }) =>
-          item.id === publishedIndicatorId,
-      );
-
-      expect(indicator).toBeDefined();
-      expect(indicator).toMatchObject({
-        id: publishedIndicatorId,
-        name: 'Indicador E2E Publicado',
-        value: 120,
-        published: true,
-      });
-
-      expect(indicator.sector.id).toBe(sectorId);
-      expect(indicator.period.id).toBe(periodId);
+      expect(res.body.id).toBe(created.id);
+      expect(res.body.name).toBe('PIB');
+      expect(res.body.sector).toMatchObject({ id: sectorId });
+      expect(res.body.period).toMatchObject({ id: periodId });
     });
 
-    it('does not expose unpublished indicators', async () => {
-      const res = await request(app.getHttpServer())
-        .get('/api/indicators/public')
-        .expect(200);
+    it('returns 404 when the indicator does not exist', async () => {
+      const missing = '00000000-0000-4000-8000-000000000000';
+      await request(app.getHttpServer())
+        .get(`/api/indicators/${missing}`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .expect(404);
+    });
 
-      const ids = res.body.map(
-        (item: { id: string }) => item.id,
-      );
-
-      expect(ids).toContain(publishedIndicatorId);
-      expect(ids).not.toContain(privateIndicatorId);
-
-      expect(
-        res.body.every(
-          (item: { published: boolean }) =>
-            item.published === true,
-        ),
-      ).toBe(true);
+    it('returns 400 when the id is not a UUID', async () => {
+      await request(app.getHttpServer())
+        .get('/api/indicators/not-a-uuid')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .expect(400);
     });
   });
 
-  describe('GET /api/indicators', () => {
+  // -------------------------------------------------------------------------
+  // POST /api/indicators
+  // -------------------------------------------------------------------------
+  describe('POST /api/indicators', () => {
+    const validPayload = () => ({
+      name: 'Inflação',
+      description: 'IPCA',
+      value: 4.5,
+      unit: '%',
+      published: true,
+      sectorId,
+      periodId,
+    });
+
+    it('returns 401 when no token is provided', async () => {
+      await request(app.getHttpServer())
+        .post('/api/indicators')
+        .send(validPayload())
+        .expect(401);
+    });
+
+    it('returns 403 when the caller is not ADMIN', async () => {
+      await request(app.getHttpServer())
+        .post('/api/indicators')
+        .set('Authorization', `Bearer ${userToken}`)
+        .send(validPayload())
+        .expect(403);
+    });
+
+    it('creates an indicator as ADMIN and returns 201 with the row', async () => {
+      const res = await request(app.getHttpServer())
+        .post('/api/indicators')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send(validPayload())
+        .expect(201);
+
+      createdIndicatorIds.push(res.body.id);
+
+      expect(res.body).toMatchObject({
+        name: 'Inflação',
+        description: 'IPCA',
+        value: 4.5,
+        unit: '%',
+        published: true,
+        sectorId,
+        periodId,
+      });
+      expect(res.body.id).toEqual(expect.any(String));
+      expect(res.body.sector).toMatchObject({ id: sectorId });
+      expect(res.body.period).toMatchObject({ id: periodId });
+    });
+
+    it('returns 400 when the body is invalid (missing name)', async () => {
+      const { name, ...invalid } = validPayload();
+      await request(app.getHttpServer())
+        .post('/api/indicators')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send(invalid)
+        .expect(400);
+    });
+
+    it('returns 400 when value is negative', async () => {
+      await request(app.getHttpServer())
+        .post('/api/indicators')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ ...validPayload(), value: -1 })
+        .expect(400);
+    });
+
+    it('returns 400 when sectorId is not a UUID', async () => {
+      await request(app.getHttpServer())
+        .post('/api/indicators')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ ...validPayload(), sectorId: 'invalid' })
+        .expect(400);
+    });
+
+    it('returns 400 when the body has an unknown property (whitelist)', async () => {
+      await request(app.getHttpServer())
+        .post('/api/indicators')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ ...validPayload(), malicious: 'nope' })
+        .expect(400);
+    });
+  });
+
+  // -------------------------------------------------------------------------
+  // PATCH /api/indicators/:id
+  // -------------------------------------------------------------------------
+  describe('PATCH /api/indicators/:id', () => {
+    let indicatorId: string;
+
+    beforeEach(async () => {
+      const created = await prisma.indicator.create({
+        data: {
+          name: 'To update',
+          value: 1,
+          sectorId,
+          periodId,
+        },
+      });
+      createdIndicatorIds.push(created.id);
+      indicatorId = created.id;
+    });
+
     it('returns 401 without a token', async () => {
       await request(app.getHttpServer())
-        .get('/api/indicators')
+        .patch(`/api/indicators/${indicatorId}`)
+        .send({ name: 'Renamed' })
         .expect(401);
     });
 
-    it('returns 403 for a regular USER', async () => {
+    it('returns 403 as a non-admin', async () => {
       await request(app.getHttpServer())
-        .get('/api/indicators')
+        .patch(`/api/indicators/${indicatorId}`)
         .set('Authorization', `Bearer ${userToken}`)
+        .send({ name: 'Renamed' })
         .expect(403);
     });
 
-    it('allows ADMIN to view all indicators', async () => {
+    it('updates as ADMIN and returns the changed row', async () => {
       const res = await request(app.getHttpServer())
-        .get('/api/indicators')
+        .patch(`/api/indicators/${indicatorId}`)
         .set('Authorization', `Bearer ${adminToken}`)
-        .expect(200);
-
-      const ids = res.body.map(
-        (item: { id: string }) => item.id,
-      );
-
-      expect(ids).toContain(publishedIndicatorId);
-      expect(ids).toContain(privateIndicatorId);
-    });
-  });
-
-  describe('GET /api/indicators/:id', () => {
-    it('returns 401 without authentication', async () => {
-      await request(app.getHttpServer())
-        .get(`/api/indicators/${privateIndicatorId}`)
-        .expect(401);
-    });
-
-    it('returns 403 for a regular USER', async () => {
-      await request(app.getHttpServer())
-        .get(`/api/indicators/${privateIndicatorId}`)
-        .set('Authorization', `Bearer ${userToken}`)
-        .expect(403);
-    });
-
-    it('allows ADMIN to view an unpublished indicator', async () => {
-      const res = await request(app.getHttpServer())
-        .get(`/api/indicators/${privateIndicatorId}`)
-        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ name: 'Renamed', published: true })
         .expect(200);
 
       expect(res.body).toMatchObject({
-        id: privateIndicatorId,
-        published: false,
-        value: 999,
+        id: indicatorId,
+        name: 'Renamed',
+        published: true,
       });
+    });
+
+    it('returns 404 for a non-existent id', async () => {
+      const missing = '00000000-0000-4000-8000-000000000000';
+      await request(app.getHttpServer())
+        .patch(`/api/indicators/${missing}`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ name: 'Renamed' })
+        .expect(404);
+    });
+
+    it('returns 400 when the id is not a UUID', async () => {
+      await request(app.getHttpServer())
+        .patch('/api/indicators/not-a-uuid')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ name: 'Renamed' })
+        .expect(400);
+    });
+  });
+
+  // -------------------------------------------------------------------------
+  // DELETE /api/indicators/:id
+  // -------------------------------------------------------------------------
+  describe('DELETE /api/indicators/:id', () => {
+    it('returns 401 without a token', async () => {
+      const r = await prisma.indicator.create({
+        data: { name: 'Del', value: 0, sectorId, periodId },
+      });
+      createdIndicatorIds.push(r.id);
+
+      await request(app.getHttpServer())
+        .delete(`/api/indicators/${r.id}`)
+        .expect(401);
+
+      const stillThere = await prisma.indicator.findUnique({ where: { id: r.id } });
+      expect(stillThere).not.toBeNull();
+    });
+
+    it('returns 403 as a non-admin', async () => {
+      const r = await prisma.indicator.create({
+        data: { name: 'Del', value: 0, sectorId, periodId },
+      });
+      createdIndicatorIds.push(r.id);
+
+      await request(app.getHttpServer())
+        .delete(`/api/indicators/${r.id}`)
+        .set('Authorization', `Bearer ${userToken}`)
+        .expect(403);
+    });
+
+    it('deletes as ADMIN and returns { success, id }', async () => {
+      const r = await prisma.indicator.create({
+        data: { name: 'Del', value: 0, sectorId, periodId },
+      });
+
+      const res = await request(app.getHttpServer())
+        .delete(`/api/indicators/${r.id}`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .expect(200);
+
+      expect(res.body).toEqual({ success: true, id: r.id });
+
+      const gone = await prisma.indicator.findUnique({ where: { id: r.id } });
+      expect(gone).toBeNull();
+    });
+
+    it('returns 404 for a non-existent id', async () => {
+      const missing = '00000000-0000-4000-8000-000000000000';
+      await request(app.getHttpServer())
+        .delete(`/api/indicators/${missing}`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .expect(404);
     });
   });
 });

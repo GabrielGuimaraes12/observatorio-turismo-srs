@@ -4,8 +4,13 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { SignOptions } from 'jsonwebtoken';
 
 import { AuthController } from './auth.controller.js';
+import { InvitationsController } from './invitations.controller.js';
 import { AuthService } from './auth.service.js';
+import { InvitationService } from './invitation.service.js';
+import { HrBootstrapService } from './hr-bootstrap.service.js';
 import { JwtTokenService } from './jwt.service.js';
+import { JwtAuthGuard } from './jwt-auth.guard.js';
+import { RolesGuard } from './roles.guard.js';
 import { PrismaModule } from '../prisma/prisma.module.js';
 
 @Module({
@@ -25,8 +30,20 @@ import { PrismaModule } from '../prisma/prisma.module.js';
       }),
     }),
   ],
-  controllers: [AuthController],
-  providers: [AuthService, JwtTokenService],
-  exports: [JwtTokenService, JwtModule],
+  controllers: [AuthController, InvitationsController],
+  providers: [
+    AuthService,
+    InvitationService,
+    HrBootstrapService,
+    JwtTokenService,
+    JwtAuthGuard,
+    RolesGuard,
+  ],
+  exports: [
+    JwtTokenService,
+    JwtModule,
+    JwtAuthGuard,
+    RolesGuard,
+  ],
 })
 export class AuthModule {}
