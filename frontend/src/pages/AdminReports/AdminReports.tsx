@@ -24,7 +24,7 @@ export function AdminReports() {
                 setIsLoadingReports(true);
                 setReportsError('');
 
-                const data = await getReports(true);
+                const data = await getReports();
 
                 if (isMounted){
                     setReports(applyReportMetadata(data));
@@ -86,7 +86,7 @@ export function AdminReports() {
                     published: false,
                 });
                 
-                const updatedReports = await getReports(true);
+                const updatedReports = await getReports();
                 const reportCreated = updatedReports.find((item) => item.name === report.name);
                 
                 if(reportCreated){
