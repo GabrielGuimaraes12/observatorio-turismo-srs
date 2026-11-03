@@ -1,4 +1,3 @@
-
 import { type FormEvent, useCallback, useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 
@@ -19,7 +18,21 @@ import {
 
 import './HRDashboard.css';
 
-const USER_ROLES: UserRole[] = ['HR', 'ADMIN', 'BUSINESS', 'USER'];
+const HR_USER_ROLES: UserRole[] = [
+  'HR',
+  'ADMIN',
+  'BUSINESS',
+  'USER',
+];
+
+const ADMIN_USER_ROLES: UserRole[] = [
+  'BUSINESS',
+  'USER',
+];
+
+interface ManagementDashboardProps {
+  mode?: 'HR' | 'ADMIN';
+}
 
 function formatDate(value: string) {
   const date = new Date(value);
@@ -29,7 +42,14 @@ function formatDate(value: string) {
     : date.toLocaleDateString('pt-BR');
 }
 
-export function HRDashboard() {
+export function HRDashboard({
+  mode = 'HR',
+}: ManagementDashboardProps) {
+  const isHR = mode === 'HR';
+
+  const availableRoles = isHR
+    ? HR_USER_ROLES
+    : ADMIN_USER_ROLES;
   const navigate = useNavigate();
 
   const [activeTab, setActiveTab] = useState<
@@ -43,12 +63,14 @@ export function HRDashboard() {
 
   const [email, setEmail] = useState('');
   const [invitationRole, setInvitationRole] =
-    useState<InvitationRole>('ADMIN');
+    useState<InvitationRole>(isHR ? 'ADMIN' : 'BUSINESS');
   const [creatingInvitation, setCreatingInvitation] = useState(false);
   const [createdInvitation, setCreatedInvitation] =
     useState<CreatedInvitation | null>(null);
 
-  const [selectedRole, setSelectedRole] = useState<UserRole>('HR');
+  const [selectedRole, setSelectedRole] = useState<UserRole>(
+    isHR ? 'HR' : 'BUSINESS',
+  );
   const [users, setUsers] = useState<ManagementUser[]>([]);
   const [usersLoading, setUsersLoading] = useState(true);
   const [usersError, setUsersError] = useState('');
@@ -141,7 +163,10 @@ export function HRDashboard() {
     setCreatingInvitation(true);
 
     try {
-      const result = await createInvitation(email, invitationRole);
+      const result = await createInvitation(
+        email,
+        isHR ? invitationRole : 'BUSINESS',
+      );
 
       setCreatedInvitation(result);
       setEmail('');
@@ -178,6 +203,7 @@ export function HRDashboard() {
 
   async function handleToggleUser(user: ManagementUser) {
     if (user.id === currentUserId) return;
+    if (!availableRoles.includes(user.role)) return;
 
     setBusyUserId(user.id);
     setUsersError('');
@@ -221,17 +247,25 @@ export function HRDashboard() {
       <header className="hr-header">
         <div>
           <p className="hr-eyebrow">OBSERVATÓRIO DO TURISMO</p>
-          <h1>Dashboard RH</h1>
+          <h1>{isHR ? 'Dashboard RH' : 'Dashboard ADMIN'}</h1>
           <p>Gerenciamento de convites e contas da plataforma.</p>
         </div>
 
+        <div style={{ display: 'flex', gap: '20px', alignItems: 'center' }}>
+        {!isHR && (
+            <Link to="/admin/relatorios" className="hr-home-link">
+            Gerenciar relatórios
+            </Link>
+        )}
+
         <Link to="/" className="hr-home-link">
-          Voltar ao início
+        Voltar ao início
         </Link>
+    </div>
       </header>
 
       <main className="hr-main">
-        <nav className="hr-tabs" aria-label="Áreas do RH">
+        <nav className="hr-tabs" aria-label={isHR ? 'Áreas do RH' : 'Áreas do ADMIN'}>
           <button
             type="button"
             className={activeTab === 'invitations' ? 'active' : ''}
@@ -262,8 +296,10 @@ export function HRDashboard() {
             <h2>Criar convite</h2>
 
             <p>
-              O RH pode convidar usuários dos perfis HR e ADMIN.
-              O token será exibido apenas uma vez.
+              {isHR
+                ? 'O RH pode convidar usuários dos perfis HR e ADMIN.'
+                : 'O ADMIN pode convidar somente usuários BUSINESS.'}
+              {' '}O token será exibido apenas uma vez.
             </p>
 
             <form className="hr-form" onSubmit={handleCreateInvitation}>
@@ -281,18 +317,27 @@ export function HRDashboard() {
               </div>
 
               <div className="hr-field">
-                <label htmlFor="invitation-role">Perfil do convite</label>
-                <select
-                  id="invitation-role"
-                  value={invitationRole}
-                  onChange={(event) =>
-                    setInvitationRole(event.target.value as InvitationRole)
-                  }
-                  disabled={creatingInvitation}
-                >
-                  <option value="HR">HR</option>
-                  <option value="ADMIN">ADMIN</option>
-                </select>
+                {isHR ? (
+                  <>
+                    <label htmlFor="invitation-role">Perfil do convite</label>
+                    <select
+                      id="invitation-role"
+                      value={invitationRole}
+                      onChange={(event) =>
+                        setInvitationRole(event.target.value as InvitationRole)
+                      }
+                      disabled={creatingInvitation}
+                    >
+                      <option value="HR">HR</option>
+                      <option value="ADMIN">ADMIN</option>
+                    </select>
+                  </>
+                ) : (
+                  <>
+                    <span>Perfil do convite</span>
+                    <strong>BUSINESS</strong>
+                  </>
+                )}
               </div>
 
               <button
@@ -364,7 +409,7 @@ export function HRDashboard() {
             <p>Consulte e gerencie as contas cadastradas.</p>
 
             <div className="hr-role-tabs">
-              {USER_ROLES.map((role) => (
+              {availableRoles.map((role) => (
                 <button
                   type="button"
                   key={role}

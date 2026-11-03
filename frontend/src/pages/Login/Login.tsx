@@ -69,14 +69,16 @@ export function Login() {
       );
 
       setLoginSuccess(`Login realizado com sucesso. Bem-vindo, ${response.user.name}!`);
+      
       const destination =
         response.user.role === 'HR'
           ? '/rh'
           : response.user.role === 'ADMIN'
-            ? '/admin/relatorios'
+            ? '/admin'
             : '/';
 
       navigate(destination, { replace: true });
+
     } catch (error) {
       if (error instanceof Error) {
         setLoginError(error.message);

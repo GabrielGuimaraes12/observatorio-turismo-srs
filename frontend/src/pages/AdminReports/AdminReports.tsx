@@ -24,7 +24,7 @@ export function AdminReports() {
                 setIsLoadingReports(true);
                 setReportsError('');
 
-                const data = await getReports();
+                const data = await getReports(true);
 
                 if (isMounted){
                     setReports(applyReportMetadata(data));
@@ -86,7 +86,7 @@ export function AdminReports() {
                     published: false,
                 });
                 
-                const updatedReports = await getReports();
+                const updatedReports = await getReports(true);
                 const reportCreated = updatedReports.find((item) => item.name === report.name);
                 
                 if(reportCreated){
@@ -194,6 +194,12 @@ export function AdminReports() {
                 className="logout-button" onClick={handleLogout}
             >
                 Sair
+            </button>
+            <button
+                type="button"
+                onClick={() => navigate('/admin')}
+            >
+                ← Dashboard ADMIN
             </button>
         </div>
       </header>
