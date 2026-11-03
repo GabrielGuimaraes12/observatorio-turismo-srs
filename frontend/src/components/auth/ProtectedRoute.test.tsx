@@ -12,21 +12,28 @@ function createToken(expiresInSeconds: number) {
   return `header.${btoa(JSON.stringify(payload))}.signature`;
 }
 
-function renderProtectedRoute() {
+function renderProtectedRoute(
+  path = '/admin/relatorios',
+  allowedRoles = ['ADMIN'],
+) {
   render(
-    <MemoryRouter initialEntries={['/admin/relatorios']}>
+    <MemoryRouter initialEntries={[path]}>
       <Routes>
         <Route path="/login" element={<h1>Tela de login</h1>} />
         <Route path="/" element={<h1>Página inicial</h1>} />
 
-        <Route element={<ProtectedRoute />}>
+        <Route element={<ProtectedRoute allowedRoles={allowedRoles} />}>
           <Route
             path="/admin/relatorios"
             element={<h1>Área administrativa</h1>}
           />
+          <Route
+            path="/rh"
+            element={<h1>Dashboard RH</h1>}
+          />
         </Route>
       </Routes>
-    </MemoryRouter>
+    </MemoryRouter>,
   );
 }
 
@@ -39,7 +46,7 @@ describe('ProtectedRoute', () => {
     renderProtectedRoute();
 
     expect(
-      screen.getByText('Tela de login')
+      screen.getByText('Tela de login'),
     ).toBeInTheDocument();
   });
 
@@ -47,13 +54,13 @@ describe('ProtectedRoute', () => {
     sessionStorage.setItem('authToken', createToken(3600));
     sessionStorage.setItem(
       'authUser',
-      JSON.stringify({ role: 'USER' })
+      JSON.stringify({ role: 'USER' }),
     );
 
     renderProtectedRoute();
 
     expect(
-      screen.getByText('Página inicial')
+      screen.getByText('Página inicial'),
     ).toBeInTheDocument();
   });
 
@@ -61,29 +68,72 @@ describe('ProtectedRoute', () => {
     sessionStorage.setItem('authToken', createToken(-3600));
     sessionStorage.setItem(
       'authUser',
-      JSON.stringify({ role: 'ADMIN' })
+      JSON.stringify({ role: 'ADMIN' }),
     );
 
     renderProtectedRoute();
 
     expect(
-      screen.getByText('Tela de login')
+      screen.getByText('Tela de login'),
     ).toBeInTheDocument();
 
     expect(sessionStorage.getItem('authToken')).toBeNull();
+    expect(sessionStorage.getItem('authUser')).toBeNull();
   });
 
-  it('permite acesso para administrador com token não expirado', () => {
+  it('permite acesso para ADMIN com token válido', () => {
     sessionStorage.setItem('authToken', createToken(3600));
     sessionStorage.setItem(
       'authUser',
-      JSON.stringify({ role: 'ADMIN' })
+      JSON.stringify({ role: 'ADMIN' }),
     );
 
     renderProtectedRoute();
 
     expect(
-      screen.getByText('Área administrativa')
+      screen.getByText('Área administrativa'),
+    ).toBeInTheDocument();
+  });
+
+  it('permite acesso ao dashboard RH para usuário HR', () => {
+    sessionStorage.setItem('authToken', createToken(3600));
+    sessionStorage.setItem(
+      'authUser',
+      JSON.stringify({ role: 'HR' }),
+    );
+
+    renderProtectedRoute('/rh', ['HR']);
+
+    expect(
+      screen.getByText('Dashboard RH'),
+    ).toBeInTheDocument();
+  });
+
+  it('bloqueia ADMIN na rota exclusiva de RH', () => {
+    sessionStorage.setItem('authToken', createToken(3600));
+    sessionStorage.setItem(
+      'authUser',
+      JSON.stringify({ role: 'ADMIN' }),
+    );
+
+    renderProtectedRoute('/rh', ['HR']);
+
+    expect(
+      screen.getByText('Página inicial'),
+    ).toBeInTheDocument();
+  });
+
+  it('bloqueia RH na área de relatórios administrativos', () => {
+    sessionStorage.setItem('authToken', createToken(3600));
+    sessionStorage.setItem(
+      'authUser',
+      JSON.stringify({ role: 'HR' }),
+    );
+
+    renderProtectedRoute();
+
+    expect(
+      screen.getByText('Página inicial'),
     ).toBeInTheDocument();
   });
 });
