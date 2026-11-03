@@ -53,14 +53,11 @@ Returns the token in plaintext **once**. Never returned again from \`GET /invita
 				summary: 'List my pending invitations',
 				description: `
 	Returns invitations **created by the authenticated user** that are still pending — meaning not used and not expired.
-	
 	**Scope:**
 	- HR sees only invitations they created.
 	- ADMIN sees only invitations they created.
 	- There is no endpoint to see all invitations across users.
-	
 	**The token is not returned by this endpoint.** It was shown exactly once in the POST /invitations response and cannot be retrieved again. If an invitee needs a new copy, the current invitation must be **revoked** (DELETE /invitations/:id) and a **new one created** (POST /invitations).
-	
 	**Filtering (server-side):**
 	- Used invitations are excluded.
 	- Expired invitations are excluded.
@@ -115,21 +112,21 @@ Returns the token in plaintext **once**. Never returned again from \`GET /invita
 				description: 'Missing or invalid bearer token, or deactivated account.',
 			}),
 		);
-	
+
 	export const ApiRevokeInvitation = () =>
 		applyDecorators(
 			ApiOperation({
 				summary: 'Revoke a pending invitation',
 				description: `
 	Permanently deletes a pending invitation. **The token stops working immediately** — any attempt to register with it after this call returns 403.
-	
+
 	**Who can call:**
 	- The user who created the invitation (whether HR or ADMIN).
 	- An HR can only revoke invitations they created — not another HR's.
 	- Attempting to revoke someone else's invitation returns **403**.
-	
+
 	**What "pending" means here:** the invitation has not been used and has not expired. Attempting to revoke an already-used invitation returns **404** — the row was consumed and cannot be revoked.
-	
+
 	**Difference from an expired invitation:** an expired invitation is not "revoked" — it just stops appearing in GET /invitations and stops being accepted by the register endpoint. This endpoint is for proactively cancelling an invitation that would otherwise still be valid.
 				`,
 			}),

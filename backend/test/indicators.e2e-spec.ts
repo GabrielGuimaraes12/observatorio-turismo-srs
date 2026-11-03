@@ -107,9 +107,10 @@ describe('Indicators (e2e)', () => {
   // GET /api/indicators
   // -------------------------------------------------------------------------
   describe('GET /api/indicators', () => {
-    it('returns 200 with an array (public, no auth)', async () => {
+    it('returns 200 with an array as ADMIN', async () => {
       const res = await request(app.getHttpServer())
         .get('/api/indicators')
+        .set('Authorization', `Bearer ${adminToken}`)
         .expect(200);
 
       expect(Array.isArray(res.body)).toBe(true);
@@ -136,6 +137,7 @@ describe('Indicators (e2e)', () => {
 
       const res = await request(app.getHttpServer())
         .get(`/api/indicators/${created.id}`)
+        .set('Authorization', `Bearer ${adminToken}`)
         .expect(200);
 
       expect(res.body.id).toBe(created.id);
@@ -148,12 +150,14 @@ describe('Indicators (e2e)', () => {
       const missing = '00000000-0000-4000-8000-000000000000';
       await request(app.getHttpServer())
         .get(`/api/indicators/${missing}`)
+        .set('Authorization', `Bearer ${adminToken}`)
         .expect(404);
     });
 
     it('returns 400 when the id is not a UUID', async () => {
       await request(app.getHttpServer())
         .get('/api/indicators/not-a-uuid')
+        .set('Authorization', `Bearer ${adminToken}`)
         .expect(400);
     });
   });

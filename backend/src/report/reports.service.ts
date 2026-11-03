@@ -89,7 +89,7 @@ export class ReportsService {
       include: reportInclude,
     });
   }
-  
+
   async remove(id: string, requester?: Requester) {
     await this.findOne(id, requester);
     await this.prisma.report.delete({ where: { id } });

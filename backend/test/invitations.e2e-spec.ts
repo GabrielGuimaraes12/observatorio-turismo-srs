@@ -666,13 +666,13 @@ describe('Invitations & Users (e2e)', () => {
 					.get(`/api/users?role=${role}`)
 					.set('Authorization', `Bearer ${hrToken}`)
 					.expect(200);
-		
+
 				expect(Array.isArray(res.body)).toBe(true);
 				for (const u of res.body) {
 					expect(u.role).toBe(role);
 					expect(u).not.toHaveProperty('passwordHash');
 				}
-		
+
 				if (role === 'HR') {
 					expect(res.body.some((u: { id: string }) => u.id === hrUserId)).toBe(true);
 				}

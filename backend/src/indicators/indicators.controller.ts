@@ -1,3 +1,4 @@
+
 import {
   Body,
   Controller,
@@ -29,13 +30,27 @@ import {
 export class IndicatorController {
   constructor(private readonly indicatorService: IndicatorService) {}
 
+  // Listagem administrativa
   @Get()
+  @ApiBearerAuth('JWT-auth')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN')
   @ApiListIndicators()
   findAll() {
     return this.indicatorService.findAll();
   }
 
+  // Listagem pública: somente publicados
+  @Get('public')
+  findPublished() {
+    return this.indicatorService.findPublished();
+  }
+
+  // Consulta administrativa por ID
   @Get(':id')
+  @ApiBearerAuth('JWT-auth')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN')
   @ApiFindIndicator()
   findOne(@Param('id', new ParseUUIDPipe()) id: string) {
     return this.indicatorService.findOne(id);

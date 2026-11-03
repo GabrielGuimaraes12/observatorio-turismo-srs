@@ -34,7 +34,7 @@ export class UsersService {
 				select: listSelect,
 			});
 		}
-	
+
 		if (requesterRole === 'ADMIN') {
 			if (!BUSINESS_OR_USER.includes(targetRole as (typeof BUSINESS_OR_USER)[number])) {
 				throw new ForbiddenException('Admins can only list BUSINESS or USER accounts');
@@ -45,7 +45,7 @@ export class UsersService {
 				select: listSelect,
 			});
 		}
-	
+
 		throw new ForbiddenException('Insufficient role');
 	}
 

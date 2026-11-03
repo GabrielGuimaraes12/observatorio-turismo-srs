@@ -91,7 +91,7 @@ describe('ReportsController', () => {
     const res = { success: true, id: 'r1' };
     service.remove.mockResolvedValue(res);
     const req = { user: { id: 'user-business-1', role: 'BUSINESS' } };
-  
+
     await expect(controller.remove('r1', req)).resolves.toBe(res);
     expect(service.remove).toHaveBeenCalledWith('r1', req.user);
   });

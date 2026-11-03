@@ -474,19 +474,19 @@ describe('Reports (e2e)', () => {
         .send({ title: 'Renamed' })
         .expect(404);
     });
-    
+
     it('updates a published report as ADMIN', async () => {
       await prisma.report.update({
         where: { id: reportId },
         data: { published: true },
       });
-    
+
       const res = await request(app.getHttpServer())
         .patch(`/api/reports/${reportId}`)
         .set('Authorization', `Bearer ${adminToken}`)
         .send({ title: 'Renamed' })
         .expect(200);
-    
+
       expect(res.body).toMatchObject({
         id: reportId,
         title: 'Renamed',
@@ -563,18 +563,18 @@ describe('Reports (e2e)', () => {
           published: true,        // ← must be published
         },
       });
-    
+
       const res = await request(app.getHttpServer())
         .delete(`/api/reports/${r.id}`)
         .set('Authorization', `Bearer ${adminToken}`)
         .expect(200);
-    
+
       expect(res.body).toEqual({ success: true, id: r.id });
-    
+
       const gone = await prisma.report.findUnique({ where: { id: r.id } });
       expect(gone).toBeNull();
     });
-    
+
     it('returns 404 when ADMIN tries to delete a draft they do not own', async () => {
       const r = await prisma.report.create({
         data: {
@@ -586,7 +586,7 @@ describe('Reports (e2e)', () => {
         },
       });
       createdReportIds.push(r.id);
-    
+
       await request(app.getHttpServer())
         .delete(`/api/reports/${r.id}`)
         .set('Authorization', `Bearer ${adminToken}`)
