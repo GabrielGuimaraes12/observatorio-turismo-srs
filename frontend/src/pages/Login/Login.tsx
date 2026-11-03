@@ -1,4 +1,4 @@
-import { type FormEvent, useState } from 'react';
+﻿import { type FormEvent, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import './Login.css';
 
@@ -41,7 +41,7 @@ export function Login() {
     }
 
     if (email && !email.includes('@')) {
-      setEmailError('Informe um e-mail válido!');
+      setEmailError('Informe um e-mail vÃ¡lido!');
       hasError = true;
     }
 
@@ -57,19 +57,19 @@ export function Login() {
         password,
       });
 
-      // Guarda apenas o token da sessão.
-      // A senha nunca é armazenada.
+      // Guarda apenas o token da sessÃ£o.
+      // A senha nunca Ã© armazenada.
       sessionStorage.setItem('authToken', response.token);
 
-      // Guarda os dados do usuário para serem utilizados
-      // posteriormente pela área administrativa.
+      // Guarda os dados do usuÃ¡rio para serem utilizados
+      // posteriormente pela Ã¡rea administrativa.
       sessionStorage.setItem(
         'authUser',
         JSON.stringify(response.user),
       );
 
       setLoginSuccess(`Login realizado com sucesso. Bem-vindo, ${response.user.name}!`);
-      
+
       const destination =
         response.user.role === 'HR'
           ? '/rh'
@@ -83,7 +83,7 @@ export function Login() {
       if (error instanceof Error) {
         setLoginError(error.message);
       } else {
-        setLoginError('Não foi possível realizar o login.');
+        setLoginError('NÃ£o foi possÃ­vel realizar o login.');
       }
     } finally {
       setIsLoading(false);
@@ -96,13 +96,13 @@ export function Login() {
         <div className="login-brand-content">
           <img
             src={logoObservatorioBranco}
-            alt="Observatório do Turismo de Santa Rita do Sapucaí"
+            alt="ObservatÃ³rio do Turismo de Santa Rita do SapucaÃ­"
             className="login-observatorio-logo"
           />
 
           <img
             src={logoPrefeituraBranco}
-            alt="Prefeitura de Santa Rita do Sapucaí"
+            alt="Prefeitura de Santa Rita do SapucaÃ­"
             className="login-prefeitura-logo"
           />
         </div>
@@ -111,10 +111,10 @@ export function Login() {
       <section className="login-form-section">
         <div className="login-form-container">
           <Link to="/" className="back-home">
-            ← Voltar para o início
+            â† Voltar para o inÃ­cio
           </Link>
 
-          <h2>Acesso à área administrativa</h2>
+          <h2>Acesso Ã  Ã¡rea administrativa</h2>
 
           <p className="login-subtitle">
             Entre com suas credenciais para continuar.
@@ -201,7 +201,7 @@ export function Login() {
             </button>
           </form>
           <p style={{ marginTop: 20 }}>
-          Ainda não possui conta? <Link to="/cadastro">Cadastre-se</Link>
+          Ainda nÃ£o possui conta? <Link to="/cadastro">Cadastre-se</Link>
           </p>
         </div>
       </section>
