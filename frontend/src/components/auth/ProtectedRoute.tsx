@@ -8,7 +8,13 @@ interface AuthUser {
   role: string;
 }
 
-export function ProtectedRoute() {
+interface ProtectedRouteProps {
+  allowedRoles?: string[];
+}
+
+export function ProtectedRoute({
+  allowedRoles = ['ADMIN'],
+}: ProtectedRouteProps) {
   const token = sessionStorage.getItem('authToken');
   const storedUser = sessionStorage.getItem('authUser');
 
@@ -19,12 +25,8 @@ export function ProtectedRoute() {
   try {
     const user: AuthUser = JSON.parse(storedUser);
 
-    if (user.role !== 'ADMIN') {
-      return <Navigate to="/" replace />;
-    }
-
     const payload = JSON.parse(
-      atob(token.split('.')[1])
+      atob(token.split('.')[1]),
     );
 
     if (
@@ -35,6 +37,10 @@ export function ProtectedRoute() {
       sessionStorage.removeItem('authUser');
 
       return <Navigate to="/login" replace />;
+    }
+
+    if (!allowedRoles.includes(user.role)) {
+      return <Navigate to="/" replace />;
     }
 
     return <Outlet />;

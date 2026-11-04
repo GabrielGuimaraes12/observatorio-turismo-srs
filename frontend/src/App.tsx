@@ -5,6 +5,8 @@ import { Reports } from './pages/Reports/Reports';
 import { Login } from './pages/Login/Login';
 import { AdminReports } from './pages/AdminReports/AdminReports';
 import { ProtectedRoute } from './components/auth/ProtectedRoute';
+import { Register } from './pages/Register/Register';
+import { HRDashboard } from './pages/HRDashboard/HRDashboard';
 
 function App() {
   return (
@@ -16,6 +18,10 @@ function App() {
         <Route path="/login" element={<Login />} />
         <Route element={<ProtectedRoute />}>
           <Route path="/admin/relatorios" element={<AdminReports/>} />
+        </Route>
+        <Route path="/cadastro" element={<Register />} />
+        <Route element={<ProtectedRoute allowedRoles={['HR']} />}>
+        <Route path="/rh" element={<HRDashboard />} />
         </Route>
       </Routes>
     </BrowserRouter>

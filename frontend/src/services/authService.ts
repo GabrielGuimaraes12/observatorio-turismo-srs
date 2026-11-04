@@ -38,3 +38,42 @@ export async function login(
 
   return data as LoginResponse;
 }
+
+
+export interface RegisterRequest {
+  name: string;
+  email: string;
+  password: string;
+  invitationToken?: string;
+}
+
+export async function register(
+  data: RegisterRequest,
+): Promise<LoginResponse> {
+  const response = await fetch(`${API_URL}/auth/register`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      name: data.name.trim(),
+      email: data.email.trim(),
+      password: data.password,
+      ...(data.invitationToken?.trim()
+        ? { invitationToken: data.invitationToken.trim() }
+        : {}),
+    }),
+  });
+
+  const result = await response.json();
+
+  if (!response.ok) {
+    const message = Array.isArray(result.message)
+      ? result.message.join(', ')
+      : result.message;
+
+    throw new Error(message || 'Não foi possível realizar o cadastro.');
+  }
+
+  return result as LoginResponse;
+}

@@ -69,7 +69,14 @@ export function Login() {
       );
 
       setLoginSuccess(`Login realizado com sucesso. Bem-vindo, ${response.user.name}!`);
-      navigate('/admin/relatorios', { replace: true });
+      const destination =
+        response.user.role === 'HR'
+          ? '/rh'
+          : response.user.role === 'ADMIN'
+            ? '/admin/relatorios'
+            : '/';
+
+      navigate(destination, { replace: true });
     } catch (error) {
       if (error instanceof Error) {
         setLoginError(error.message);
@@ -191,6 +198,9 @@ export function Login() {
               {isLoading ? 'Entrando...' : 'Entrar'}
             </button>
           </form>
+          <p style={{ marginTop: 20 }}>
+          Ainda não possui conta? <Link to="/cadastro">Cadastre-se</Link>
+          </p>
         </div>
       </section>
     </div>
