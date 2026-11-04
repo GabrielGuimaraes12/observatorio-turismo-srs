@@ -1,18 +1,140 @@
+
+import { useEffect, useState } from 'react';
+
 import { Header } from '../../components/layout/Header';
 import { Footer } from '../../components/layout/Footer';
+
+import {
+  getIndicators,
+  type ApiIndicator,
+} from '../../services/indicatorService';
+
+import { getReports } from '../../services/reportService';
+import type { Report } from '../../types/report';
+
 import './Home.css';
 
+const MAX_INDICATORS = 4;
+const MAX_REPORTS = 3;
+
+function formatIndicatorValue(value: number, unit: string | null) {
+  const formattedValue = new Intl.NumberFormat('pt-BR', {
+    maximumFractionDigits: 2,
+  }).format(value);
+
+  if (!unit) {
+    return formattedValue;
+  }
+
+  if (unit === '%') {
+    return `${formattedValue}%`;
+  }
+
+  if (unit === 'R$' || unit === 'BRL') {
+    return new Intl.NumberFormat('pt-BR', {
+      style: 'currency',
+      currency: 'BRL',
+      maximumFractionDigits: 2,
+    }).format(value);
+  }
+
+  return `${formattedValue} ${unit}`;
+}
+
+function formatReportDate(date: string) {
+  const parsedDate = new Date(date);
+
+  if (Number.isNaN(parsedDate.getTime())) {
+    return 'Data não informada';
+  }
+
+  return new Intl.DateTimeFormat('pt-BR', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+    timeZone: 'UTC',
+  }).format(parsedDate);
+}
+
 export function Home() {
+  const [indicators, setIndicators] = useState<ApiIndicator[]>([]);
+  const [reports, setReports] = useState<Report[]>([]);
+
+  const [indicatorsLoading, setIndicatorsLoading] = useState(true);
+  const [reportsLoading, setReportsLoading] = useState(true);
+
+  const [indicatorsError, setIndicatorsError] = useState('');
+  const [reportsError, setReportsError] = useState('');
+
+  useEffect(() => {
+    let active = true;
+
+    async function loadIndicators() {
+      try {
+        const data = await getIndicators();
+
+        if (!active) return;
+
+        const published = data
+          .filter((indicator) => indicator.published)
+          .slice(0, MAX_INDICATORS);
+
+        setIndicators(published);
+        setIndicatorsError('');
+      } catch {
+        if (active) {
+          setIndicatorsError('Não foi possível carregar os indicadores.');
+        }
+      } finally {
+        if (active) {
+          setIndicatorsLoading(false);
+        }
+      }
+    }
+
+    async function loadReports() {
+      try {
+        const data = await getReports();
+
+        if (!active) return;
+
+        const recentReports = data
+          .filter((report) => report.published)
+          .sort(
+            (a, b) =>
+              new Date(b.createdAt).getTime() -
+              new Date(a.createdAt).getTime(),
+          )
+          .slice(0, MAX_REPORTS);
+
+        setReports(recentReports);
+        setReportsError('');
+      } catch {
+        if (active) {
+          setReportsError('Não foi possível carregar os relatórios.');
+        }
+      } finally {
+        if (active) {
+          setReportsLoading(false);
+        }
+      }
+    }
+
+    void loadIndicators();
+    void loadReports();
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
   return (
     <div className="home-page">
-
       <Header />
 
       <main>
-
         <section className="home-hero">
           <div className="hero-content">
-
             <div className="hero-text">
               <p className="hero-label">
                 OBSERVATÓRIO DO TURISMO
@@ -27,17 +149,14 @@ export function Home() {
                 sustentável do nosso destino.
               </p>
 
-              <a
-                href="/indicadores"
-                className="hero-button"
-              >
+              <a href="/indicadores" className="hero-button">
                 Conheça os indicadores →
               </a>
             </div>
 
             <div className="hero-illustration">
-              <div className="mountain mountain-back"></div>
-              <div className="mountain mountain-front"></div>
+              <div className="mountain mountain-back" />
+              <div className="mountain mountain-front" />
 
               <span>
                 SANTA RITA
@@ -45,12 +164,10 @@ export function Home() {
                 DO SAPUCAÍ
               </span>
             </div>
-
           </div>
         </section>
 
         <section className="home-section shortcuts-section">
-
           <div className="section-heading">
             <div>
               <p className="section-label">EXPLORE</p>
@@ -59,10 +176,8 @@ export function Home() {
           </div>
 
           <div className="shortcut-grid">
-
             <a href="/indicadores" className="shortcut-card">
               <span className="shortcut-icon">↗</span>
-
               <div>
                 <h3>Indicadores</h3>
                 <p>
@@ -73,7 +188,6 @@ export function Home() {
 
             <a href="/relatorios" className="shortcut-card">
               <span className="shortcut-icon">▤</span>
-
               <div>
                 <h3>Relatórios</h3>
                 <p>
@@ -84,7 +198,6 @@ export function Home() {
 
             <a href="#atrativos" className="shortcut-card">
               <span className="shortcut-icon">⌖</span>
-
               <div>
                 <h3>Atrativos</h3>
                 <p>
@@ -95,7 +208,6 @@ export function Home() {
 
             <a href="#sobre" className="shortcut-card">
               <span className="shortcut-icon">ⓘ</span>
-
               <div>
                 <h3>Sobre o Observatório</h3>
                 <p>
@@ -103,21 +215,16 @@ export function Home() {
                 </p>
               </div>
             </a>
-
           </div>
         </section>
 
         <section className="home-section indicators-preview">
-
           <div className="section-heading">
             <div>
               <p className="section-label">
                 TURISMO EM NÚMEROS
               </p>
-
-              <h2>
-                Indicadores em destaque
-              </h2>
+              <h2>Indicadores em destaque</h2>
             </div>
 
             <a href="/indicadores" className="section-link">
@@ -125,38 +232,47 @@ export function Home() {
             </a>
           </div>
 
-          <div className="stats-grid">
+          {indicatorsLoading && (
+            <p role="status">Carregando indicadores...</p>
+          )}
 
-            <article className="stat-card">
-              <span>Visitantes</span>
-              <strong>24,8 mil</strong>
-              <small>↑ 12% em relação a 2024</small>
-            </article>
+          {!indicatorsLoading && indicatorsError && (
+            <p role="alert">{indicatorsError}</p>
+          )}
 
-            <article className="stat-card">
-              <span>Ocupação hoteleira</span>
-              <strong>68%</strong>
-              <small>↑ 5% em relação a 2024</small>
-            </article>
+          {!indicatorsLoading &&
+            !indicatorsError &&
+            indicators.length === 0 && (
+              <p>Nenhum indicador publicado disponível no momento.</p>
+            )}
 
-            <article className="stat-card">
-              <span>Receita turística</span>
-              <strong>R$ 4,2 mi</strong>
-              <small>↑ 18% em relação a 2024</small>
-            </article>
+          {!indicatorsLoading &&
+            !indicatorsError &&
+            indicators.length > 0 && (
+              <div className="stats-grid">
+                {indicators.map((indicator) => (
+                  <article className="stat-card" key={indicator.id}>
+                    <span>{indicator.name}</span>
 
-            <article className="stat-card">
-              <span>Atrativos</span>
-              <strong>12</strong>
-              <small>↑ 2 em relação a 2024</small>
-            </article>
+                    <strong>
+                      {formatIndicatorValue(
+                        indicator.value,
+                        indicator.unit,
+                      )}
+                    </strong>
 
-          </div>
-
+                    <small>
+                      {indicator.sector?.name ?? 'Setor não informado'}
+                      {' · '}
+                      {indicator.period?.name ?? 'Período não informado'}
+                    </small>
+                  </article>
+                ))}
+              </div>
+            )}
         </section>
 
         <section className="home-section reports-preview">
-
           <div className="section-heading">
             <h2>Publicações recentes</h2>
 
@@ -165,57 +281,57 @@ export function Home() {
             </a>
           </div>
 
-          <div className="reports-grid">
+          {reportsLoading && (
+            <p role="status">Carregando publicações...</p>
+          )}
 
-            <article className="report-card">
-              <small>12 ago 2026</small>
+          {!reportsLoading && reportsError && (
+            <p role="alert">{reportsError}</p>
+          )}
 
-              <h3>
-                Relatório de Indicadores do Turismo – 2026
-              </h3>
+          {!reportsLoading &&
+            !reportsError &&
+            reports.length === 0 && (
+              <p>Nenhuma publicação disponível no momento.</p>
+            )}
 
-              <a href="/relatorios">
-                Acessar relatório →
-              </a>
-            </article>
+          {!reportsLoading &&
+            !reportsError &&
+            reports.length > 0 && (
+              <div className="reports-grid">
+                {reports.map((report) => (
+                  <article className="report-card" key={report.id}>
+                    <small>
+                      {formatReportDate(report.createdAt)}
+                    </small>
 
-            <article className="report-card">
-              <small>10 fev 2026</small>
+                    <h3>{report.name}</h3>
 
-              <h3>
-                Relatório de Turismo em Santa Rita – 2025
-              </h3>
-
-              <a href="/relatorios">
-                Acessar relatório →
-              </a>
-            </article>
-
-            <article className="report-card">
-              <small>05 dez 2025</small>
-
-              <h3>
-                Inventário da Oferta Turística
-              </h3>
-
-              <a href="/relatorios">
-                Acessar relatório →
-              </a>
-            </article>
-
-          </div>
-
+                    {report.pdfUrl ? (
+                      <a
+                        href={report.pdfUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        Acessar relatório →
+                      </a>
+                    ) : (
+                      <a href="/relatorios">
+                        Ver relatórios →
+                      </a>
+                    )}
+                  </article>
+                ))}
+              </div>
+            )}
         </section>
 
         <section
           id="sobre"
           className="home-section sustainability-section"
         >
-
           <div>
-            <h2>
-              Turismo sustentável para o futuro
-            </h2>
+            <h2>Turismo sustentável para o futuro</h2>
 
             <p>
               Acreditamos no turismo como ferramenta de desenvolvimento
@@ -227,13 +343,10 @@ export function Home() {
           <a href="#sobre" className="secondary-button">
             Saiba mais
           </a>
-
         </section>
-
       </main>
 
       <Footer />
-
     </div>
   );
 }
