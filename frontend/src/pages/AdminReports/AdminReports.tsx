@@ -195,6 +195,12 @@ export function AdminReports() {
             >
                 Sair
             </button>
+            <button
+                type="button"
+                onClick={() => navigate('/admin')}
+            >
+                ← Dashboard ADMIN
+            </button>
         </div>
       </header>
 
