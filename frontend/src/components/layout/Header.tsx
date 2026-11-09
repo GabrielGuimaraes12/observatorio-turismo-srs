@@ -5,9 +5,7 @@ import './Header.css';
 
 export function Header() {
   const user = getSessionUser();
-  const dashboard = user && sessionStorage.getItem('authToken')
-    ? getDashboardPath(user.role)
-    : undefined;
+  const dashboard = user ? getDashboardPath(user.role) : undefined;
   return (
     <header className="site-header">
       <div className="header-container">

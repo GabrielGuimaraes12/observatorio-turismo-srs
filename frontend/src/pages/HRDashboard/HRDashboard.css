@@ -35,6 +35,16 @@
   text-decoration: underline;
 }
 
+.hr-logout-button {
+  padding: 6px 12px;
+  color: inherit;
+  background: transparent;
+  border: 1px solid currentColor;
+  border-radius: 6px;
+  font: inherit;
+  cursor: pointer;
+}
+
 .hr-main {
   max-width: 1200px;
   margin: 0 auto;

@@ -183,10 +183,6 @@ export function Login() {
               </span>
             )}
 
-            <a href="#" className="forgot-password">
-              Esqueci minha senha
-            </a>
-
             <button
               type="submit"
               className="login-button"

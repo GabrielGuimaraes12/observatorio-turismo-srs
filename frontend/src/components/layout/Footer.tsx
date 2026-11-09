@@ -18,8 +18,8 @@ export function Footer() {
         <nav className="footer-navigation">
           <Link to="/">Início</Link>
           <Link to="/indicadores">Indicadores</Link>
-          <a href="/relatorios">Relatórios</a>
-          <a href="/sobre">Sobre</a>
+          <Link to="/relatorios">Relatórios</Link>
+          <a href="/#sobre">Sobre</a>
         </nav>
 
         <div className="footer-prefeitura">
