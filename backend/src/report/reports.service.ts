@@ -21,11 +21,14 @@ export class ReportsService {
 
   async findAll(requester?: Requester) {
     // Visibility:
-    // - Anonymous / USER / ADMIN / HR → published only
+    // - Anonymous / USER / HR → published only
+    // - ADMIN → all reports
     // - BUSINESS → published + their own drafts
     let where: Record<string, unknown> = { published: true };
 
-    if (requester?.role === 'BUSINESS') {
+    if (requester?.role === 'ADMIN') {
+      where = {};
+    } else if (requester?.role === 'BUSINESS') {
       where = {
         OR: [
           { published: true },
@@ -51,8 +54,8 @@ export class ReportsService {
       throw new NotFoundException(`Report ${id} not found`);
     }
 
-    if (report.published) {
-      return report; // published reports are always visible
+    if (report.published || requester?.role === 'ADMIN') {
+      return report;
     }
 
     const isAuthor =

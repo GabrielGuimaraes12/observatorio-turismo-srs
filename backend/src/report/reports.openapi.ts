@@ -61,10 +61,11 @@ Returns reports ordered by createdAt descending (most recent first).
 
 **Visibility rules:**
 
-- **Anonymous, USER, ADMIN, HR** — only published reports.
+- **Anonymous, USER, HR** — only published reports.
+- **ADMIN** — all reports, including drafts.
 - **BUSINESS** — published reports plus **their own drafts** (reports they authored that are not yet published). They do not see drafts from other businesses.
 
-To be treated as a BUSINESS, include a valid bearer token in the request. Requests without a token are handled as anonymous and receive only published reports.
+To use ADMIN or BUSINESS visibility, include a valid bearer token in the request. Requests without a token are handled as anonymous and receive only published reports.
 
 Each report includes the related period and author when present, or null if not attached.
 
@@ -85,7 +86,7 @@ export const ApiFindReport = () =>
       description: `
 Returns a single report with its related period and author.
 
-**Draft visibility:** a report with published = false is returned only if the caller is the BUSINESS that authored it. For every other caller (including anonymous and ADMIN), a draft returns the same 404 as a non-existent id — this avoids confirming that a draft with that id exists.
+**Draft visibility:** a report with published = false is returned to ADMIN or to the BUSINESS that authored it. For every other caller, a draft returns the same 404 as a non-existent id — this avoids confirming that a draft with that id exists.
 
 Published reports are returned to any caller.
 
@@ -99,7 +100,7 @@ Public endpoint — authentication is optional and only affects visibility.
     }),
     ApiNotFoundResponse({
       description:
-        'Report not found, or the report is a draft and the caller is not its author.',
+        'Report not found, or the caller cannot view this draft.',
     }),
     ApiBadRequestResponse({ description: 'id is not a valid UUID.' }),
   );
@@ -114,7 +115,7 @@ export const ApiCreateReport = () =>
 
 The periodId field (when provided) must reference an existing row — if it does not, the endpoint returns 404 naming the missing relation.
 
-The published field defaults to false. A report created with published: false is a draft: it is not visible on the public list, but the author (if a BUSINESS) can still see it via GET /reports and GET /reports/:id.
+The published field defaults to false. BUSINESS requests with published: true are rejected with 403. A report created with published: false is a draft: it is not visible on the public list, but the author (if a BUSINESS) can still see it via GET /reports and GET /reports/:id.
 
 The authorId is set automatically from the caller's token. It cannot be chosen by the client.
       `,
