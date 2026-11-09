@@ -83,13 +83,13 @@ describe('ReportsService', () => {
       );
     });
 
-    it('ADMIN requester sees published only (does not see drafts)', async () => {
+    it('ADMIN requester sees published reports and drafts', async () => {
       prisma.report.findMany.mockResolvedValue([publishedReport]);
 
       await service.findAll({ id: 'admin-1', role: 'ADMIN' });
 
       expect(prisma.report.findMany).toHaveBeenCalledWith(
-        expect.objectContaining({ where: { published: true } }),
+        expect.objectContaining({ where: {} }),
       );
     });
 
@@ -186,12 +186,12 @@ describe('ReportsService', () => {
       ).rejects.toBeInstanceOf(NotFoundException);
     });
 
-    it('throws NotFound when a draft is requested by ADMIN (only author sees drafts)', async () => {
+    it('returns a draft to ADMIN', async () => {
       prisma.report.findUnique.mockResolvedValue(draftReport);
 
       await expect(
         service.findOne('report-2', { id: 'admin-1', role: 'ADMIN' }),
-      ).rejects.toBeInstanceOf(NotFoundException);
+      ).resolves.toBe(draftReport);
     });
 
     it('throws NotFound when the report does not exist', async () => {

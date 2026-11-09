@@ -2,6 +2,7 @@ import {
   Body,
   Controller,
   Delete,
+  ForbiddenException,
   Get,
   Param,
   ParseUUIDPipe,
@@ -58,7 +59,12 @@ export class ReportsController {
   @Roles('ADMIN', 'BUSINESS')
   @ApiCreateReport()
   create(@Body() dto: CreateReportDto, @Req() req: AuthedRequest) {
-    return this.reportsService.create(dto, req.user!.id);
+    const user = req.user!;
+    if (user.role === 'BUSINESS' && dto.published) {
+      throw new ForbiddenException('Only admins can publish reports');
+    }
+
+    return this.reportsService.create(dto, user.id);
   }
 
   @Patch(':id')

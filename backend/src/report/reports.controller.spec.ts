@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeEach, vi, Mock } from 'vitest';
+import { ForbiddenException } from '@nestjs/common';
 import { ReportsController } from './reports.controller.js';
 import { ReportsService } from './reports.service.js';
 
@@ -75,6 +76,14 @@ describe('ReportsController', () => {
 
     await expect(controller.create(dto, req)).resolves.toBe(created);
     expect(service.create).toHaveBeenCalledWith(dto, 'user-business-1');
+  });
+
+  it('rejects direct publication by BUSINESS', () => {
+    const dto = { title: 'T', fileUrl: 'https://x/y.pdf', published: true };
+    const req = { user: { id: 'user-business-1', role: 'BUSINESS' } };
+
+    expect(() => controller.create(dto, req)).toThrow(ForbiddenException);
+    expect(service.create).not.toHaveBeenCalled();
   });
 
   it('update delegates with id and DTO', async () => {

@@ -187,7 +187,7 @@ describe('Reports (e2e)', () => {
       expect(ids).not.toContain(bizDraftId);
     });
 
-    it('ADMIN sees only published reports (drafts are business-owned)', async () => {
+    it('ADMIN sees published reports and drafts', async () => {
       const res = await request(app.getHttpServer())
         .get('/api/reports')
         .set('Authorization', `Bearer ${adminToken}`)
@@ -195,8 +195,9 @@ describe('Reports (e2e)', () => {
 
       const ids = res.body.map((r: { id: string }) => r.id);
       expect(ids).toContain(publishedId);
-      expect(ids).not.toContain(adminDraftId); // admin's own draft NOT visible
-      expect(ids).not.toContain(bizDraftId);
+      expect(ids).toContain(adminDraftId);
+      expect(ids).toContain(bizDraftId);
+      expect(ids).toContain(otherBizDraftId);
     });
 
     it('BUSINESS sees published reports plus their own drafts', async () => {
@@ -290,11 +291,11 @@ describe('Reports (e2e)', () => {
         .expect(404);
     });
 
-    it('returns 404 for a draft when called by ADMIN (not the author)', async () => {
+    it('returns 200 for a draft when called by ADMIN', async () => {
       await request(app.getHttpServer())
         .get(`/api/reports/${bizDraftId}`)
         .set('Authorization', `Bearer ${adminToken}`)
-        .expect(404);
+        .expect(200);
     });
 
     it('returns 200 for a draft when called by its BUSINESS author', async () => {
@@ -390,6 +391,14 @@ describe('Reports (e2e)', () => {
       expect(list.body.some((r: { id: string }) => r.id === res.body.id)).toBe(true);
     });
 
+    it('returns 403 when BUSINESS tries to publish on creation', async () => {
+      await request(app.getHttpServer())
+        .post('/api/reports')
+        .set('Authorization', `Bearer ${businessToken}`)
+        .send({ title: 'X', fileUrl: 'https://x/y.pdf', published: true })
+        .expect(403);
+    });
+
     it('ignores a client-supplied authorId (whitelist)', async () => {
       await request(app.getHttpServer())
         .post('/api/reports')
@@ -465,14 +474,14 @@ describe('Reports (e2e)', () => {
         .expect(403);
     });
 
-    it('returns 404 when ADMIN tries to edit a draft they do not own', async () => {
-      // `reportId` (from beforeEach) is a draft authored by businessId.
-      // Under Model 2, the admin cannot edit a draft they didn't author.
-      await request(app.getHttpServer())
+    it('allows ADMIN to publish a draft submitted by BUSINESS', async () => {
+      const res = await request(app.getHttpServer())
         .patch(`/api/reports/${reportId}`)
         .set('Authorization', `Bearer ${adminToken}`)
-        .send({ title: 'Renamed' })
-        .expect(404);
+        .send({ published: true })
+        .expect(200);
+
+      expect(res.body.published).toBe(true);
     });
 
     it('updates a published report as ADMIN', async () => {
@@ -575,7 +584,7 @@ describe('Reports (e2e)', () => {
       expect(gone).toBeNull();
     });
 
-    it('returns 404 when ADMIN tries to delete a draft they do not own', async () => {
+    it('allows ADMIN to delete a draft submitted by BUSINESS', async () => {
       const r = await prisma.report.create({
         data: {
           title: 'Draft',
@@ -590,7 +599,7 @@ describe('Reports (e2e)', () => {
       await request(app.getHttpServer())
         .delete(`/api/reports/${r.id}`)
         .set('Authorization', `Bearer ${adminToken}`)
-        .expect(404);
+        .expect(200);
     });
 
     it('returns 404 for a non-existent id', async () => {
