@@ -1,4 +1,5 @@
 import type { Report } from '../types/report';
+import { getSessionUser } from './authService';
 
 const API_URL =
   import.meta.env.VITE_API_URL ?? 'http://localhost:3000/api';
@@ -6,6 +7,7 @@ const API_URL =
 interface ApiReport {
     id: string;
     title: string;
+    authorId: string;
     description: string | null;
     fileUrl: string;
     published: boolean;
@@ -37,8 +39,12 @@ function mapApiReport(report: ApiReport): Report {
   };
 }
 
-export async function getReports(): Promise<Report[]> {
-    const response = await fetch(`${API_URL}/reports`);
+export async function getReports(scope: 'public' | 'admin' | 'own' = 'public'): Promise<Report[]> {
+    const authorId = scope === 'own' ? getSessionUser()?.id : undefined;
+    const options = scope === 'public' ? undefined : {
+        headers: { Authorization: `Bearer ${getReportToken()}` },
+    };
+    const response = await fetch(`${API_URL}/reports`, options);
 
     if (!response.ok) {
         throw new Error('Não foi possível carregar os relatórios.');
@@ -46,7 +52,8 @@ export async function getReports(): Promise<Report[]> {
 
     const data = (await response.json()) as ApiReport[];
 
-    return data.map(mapApiReport);
+    const reports = scope === 'own' ? data.filter((report) => report.authorId === authorId) : data;
+    return reports.map(mapApiReport);
 }
 
 export interface CreateReportRequest {
@@ -56,13 +63,18 @@ export interface CreateReportRequest {
     published: boolean;
 }
 
-export async function createReport(report: CreateReportRequest): Promise<void> {
+function getReportToken(): string {
     const token = sessionStorage.getItem('authToken');
 
     if (!token) {
         throw new Error('Sua sessão expirou. Entre novamente.');
     }
 
+    return token;
+}
+
+export async function createReport(report: CreateReportRequest): Promise<Report> {
+    const token = getReportToken();
     const response = await fetch(`${API_URL}/reports`, {
         method: 'POST',
         headers: {
@@ -78,6 +90,8 @@ export async function createReport(report: CreateReportRequest): Promise<void> {
 
         throw new Error(message || 'Não foi possível cadastrar o relatório.');
     }
+
+    return mapApiReport(await response.json() as ApiReport);
 }
 
 

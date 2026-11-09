@@ -24,7 +24,7 @@ export function AdminReports() {
                 setIsLoadingReports(true);
                 setReportsError('');
 
-                const data = await getReports();
+                const data = await getReports('admin');
 
                 if (isMounted){
                     setReports(applyReportMetadata(data));
@@ -79,26 +79,20 @@ export function AdminReports() {
                 setReports((currentReports) => currentReports.map((currentReport) => 
                     currentReport.id === report.id ? report : currentReport));
             } else {
-                await createReport({
+                const createdReport = await createReport({
                     title: report.name,
                     description: report.description,
                     fileUrl: report.pdfUrl,
                     published: false,
                 });
-                
-                const updatedReports = await getReports();
-                const reportCreated = updatedReports.find((item) => item.name === report.name);
-                
-                if(reportCreated){
-                    const reportWithMetadata = {
-                        ...reportCreated,
-                        period: report.period,
-                        sector: report.sector,
-                    };
 
-                    saveReportMetadata(reportWithMetadata);
-                }
-                setReports(applyReportMetadata(updatedReports));
+                const reportWithMetadata = {
+                    ...createdReport,
+                    period: report.period,
+                    sector: report.sector,
+                };
+                saveReportMetadata(reportWithMetadata);
+                setReports((currentReports) => [reportWithMetadata, ...currentReports]);
             }
             
             setIsFormOpen(false);

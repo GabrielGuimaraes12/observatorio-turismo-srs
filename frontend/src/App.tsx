@@ -9,6 +9,7 @@ import { Register } from './pages/Register/Register';
 
 import { AdminReports } from './pages/AdminReports/AdminReports';
 import { AdminDashboard } from './pages/AdminDashboard/AdminDashboard';
+import { BusinessDashboard } from './pages/BusinessDashboard/BusinessDashboard';
 import { HRDashboard } from './pages/HRDashboard/HRDashboard';
 
 import { ProtectedRoute } from './components/auth/ProtectedRoute';
@@ -37,6 +38,10 @@ function App() {
             path="/admin/relatorios"
             element={<AdminReports />}
           />
+        </Route>
+
+        <Route element={<ProtectedRoute allowedRoles={['BUSINESS']} />}>
+          <Route path="/business" element={<BusinessDashboard />} />
         </Route>
 
         {/* Rota exclusiva de RH */}

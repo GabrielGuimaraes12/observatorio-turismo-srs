@@ -1,8 +1,13 @@
 import { NavLink } from 'react-router-dom';
 import logoObservatorio from '../../assets/logo-observatorio.png';
+import { getDashboardPath, getSessionUser } from '../../services/authService';
 import './Header.css';
 
 export function Header() {
+  const user = getSessionUser();
+  const dashboard = user && sessionStorage.getItem('authToken')
+    ? getDashboardPath(user.role)
+    : undefined;
   return (
     <header className="site-header">
       <div className="header-container">
@@ -47,10 +52,10 @@ export function Header() {
             Relatórios
           </NavLink>
 
-          <a href="/login" className="nav-link">
+          <NavLink to={dashboard ?? '/login'} className="nav-link">
             <span className="nav-icon"></span>
-            Entrar
-          </a>
+            {dashboard ? 'Minha área' : 'Entrar'}
+          </NavLink>
 
         </nav>
 
