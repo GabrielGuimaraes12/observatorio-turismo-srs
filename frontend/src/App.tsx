@@ -7,6 +7,7 @@ import { Reports } from './pages/Reports/Reports';
 import { Login } from './pages/Login/Login';
 import { Register } from './pages/Register/Register';
 
+import { AdminIndicators } from './pages/AdminIndicators/AdminIndicators';
 import { AdminReports } from './pages/AdminReports/AdminReports';
 import { AdminDashboard } from './pages/AdminDashboard/AdminDashboard';
 import { HRDashboard } from './pages/HRDashboard/HRDashboard';
@@ -37,6 +38,7 @@ function App() {
             path="/admin/relatorios"
             element={<AdminReports />}
           />
+          <Route path="/admin/indicadores" element={<AdminIndicators />} />
         </Route>
 
         {/* Rota exclusiva de RH */}
