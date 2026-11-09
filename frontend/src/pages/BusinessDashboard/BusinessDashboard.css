@@ -1,0 +1,30 @@
+@import '../Login/Login.css';
+
+.business-dashboard {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.business-dashboard .admin-reports-header {
+  margin-bottom: 0;
+}
+
+.business-report-form {
+  display: grid;
+  gap: 12px;
+  max-width: 640px;
+}
+
+.business-report-form input,
+.business-report-form textarea {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #a4a7b5;
+  border-radius: 6px;
+  font: inherit;
+}
+
+.business-report-form button {
+  justify-self: start;
+}

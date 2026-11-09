@@ -15,7 +15,7 @@ describe('Login', () => {
 
     expect(
       screen.getByRole('heading', {
-        name: /acesso à área administrativa/i,
+        name: /acesse sua conta/i,
       })
     ).toBeInTheDocument();
 

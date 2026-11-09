@@ -10,6 +10,7 @@ import { Register } from './pages/Register/Register';
 import { AdminIndicators } from './pages/AdminIndicators/AdminIndicators';
 import { AdminReports } from './pages/AdminReports/AdminReports';
 import { AdminDashboard } from './pages/AdminDashboard/AdminDashboard';
+import { BusinessDashboard } from './pages/BusinessDashboard/BusinessDashboard';
 import { HRDashboard } from './pages/HRDashboard/HRDashboard';
 
 import { ProtectedRoute } from './components/auth/ProtectedRoute';
@@ -39,6 +40,10 @@ function App() {
             element={<AdminReports />}
           />
           <Route path="/admin/indicadores" element={<AdminIndicators />} />
+        </Route>
+
+        <Route element={<ProtectedRoute allowedRoles={['BUSINESS']} />}>
+          <Route path="/business" element={<BusinessDashboard />} />
         </Route>
 
         {/* Rota exclusiva de RH */}

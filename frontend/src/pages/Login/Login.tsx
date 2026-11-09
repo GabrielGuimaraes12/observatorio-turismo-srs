@@ -5,7 +5,7 @@ import './Login.css';
 import logoObservatorioBranco from '../../assets/logo-observatorio-branco.png';
 import logoPrefeituraBranco from '../../assets/logo-prefeitura-branco.png';
 
-import { login } from '../../services/authService';
+import { getDashboardPath, login } from '../../services/authService';
 
 export function Login() {
   const [email, setEmail] = useState('');
@@ -70,12 +70,7 @@ export function Login() {
 
       setLoginSuccess(`Login realizado com sucesso. Bem-vindo, ${response.user.name}!`);
       
-      const destination =
-        response.user.role === 'HR'
-          ? '/rh'
-          : response.user.role === 'ADMIN'
-            ? '/admin'
-            : '/';
+      const destination = getDashboardPath(response.user.role) ?? '/';
 
       navigate(destination, { replace: true });
 
@@ -114,7 +109,7 @@ export function Login() {
             ← Voltar para o início
           </Link>
 
-          <h2>Acesso à área administrativa</h2>
+          <h2>Acesse sua conta</h2>
 
           <p className="login-subtitle">
             Entre com suas credenciais para continuar.

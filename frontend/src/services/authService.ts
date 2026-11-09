@@ -1,6 +1,24 @@
 const API_URL =
   import.meta.env.VITE_API_URL ?? 'http://localhost:3000/api';
 
+export function getDashboardPath(role: string): string | undefined {
+  switch (role) {
+    case 'HR': return '/rh';
+    case 'ADMIN': return '/admin';
+    case 'BUSINESS': return '/business';
+    default: return undefined;
+  }
+}
+
+export function getSessionUser(): AuthUser | null {
+  try {
+    const user = sessionStorage.getItem('authUser');
+    return user ? JSON.parse(user) as AuthUser : null;
+  } catch {
+    return null;
+  }
+}
+
 export interface LoginRequest {
   email: string;
   password: string;
