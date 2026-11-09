@@ -251,11 +251,16 @@ export function HRDashboard({
           <p>Gerenciamento de convites e contas da plataforma.</p>
         </div>
 
-        <div style={{ display: 'flex', gap: '20px', alignItems: 'center' }}>
+        <div style={{ display: 'flex', gap: '20px', alignItems: 'center', flexWrap: 'wrap' }}>
         {!isHR && (
+          <>
             <Link to="/admin/relatorios" className="hr-home-link">
-            Gerenciar relatórios
+              Gerenciar relatórios
             </Link>
+            <Link to="/admin/indicadores" className="hr-home-link">
+              Gerenciar indicadores
+            </Link>
+          </>
         )}
 
         <Link to="/" className="hr-home-link">

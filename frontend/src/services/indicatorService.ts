@@ -35,3 +35,52 @@ export async function getIndicators(): Promise<ApiIndicator[]> {
 
   return data as ApiIndicator[];
 }
+export interface IndicatorReference {
+  id: string;
+  name: string;
+}
+
+type IndicatorInput = Pick<
+  ApiIndicator,
+  'name' | 'description' | 'value' | 'unit' | 'published' | 'sectorId' | 'periodId'
+>;
+
+async function indicatorAdminRequest<T>(path: string, method = 'GET', input?: Partial<IndicatorInput>): Promise<T> {
+  const token = sessionStorage.getItem('authToken');
+  if (!token) throw new Error('Sua sessão expirou. Entre novamente.');
+
+  const response = await fetch(`${API_URL}${path}`, {
+    method,
+    headers: {
+      Authorization: `Bearer ${token}`,
+      ...(input ? { 'Content-Type': 'application/json' } : {}),
+    },
+    body: input ? JSON.stringify(input) : undefined,
+  });
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => null);
+    const message = Array.isArray(error?.message) ? error.message.join(', ') : error?.message;
+    throw new Error(message || 'Não foi possível concluir a operação de indicadores.');
+  }
+
+  return response.json() as Promise<T>;
+}
+
+export function getIndicatorManagementData() {
+  return Promise.all([
+    indicatorAdminRequest<ApiIndicator[]>('/indicators'),
+    indicatorAdminRequest<IndicatorReference[]>('/sectors'),
+    indicatorAdminRequest<IndicatorReference[]>('/periods'),
+  ]);
+}
+
+export function saveIndicator(input: Partial<IndicatorInput>, id?: string): Promise<ApiIndicator> {
+  return id
+    ? indicatorAdminRequest(`/indicators/${encodeURIComponent(id)}`, 'PATCH', input)
+    : indicatorAdminRequest('/indicators', 'POST', input);
+}
+
+export function deleteIndicator(id: string): Promise<{ success: boolean }> {
+  return indicatorAdminRequest(`/indicators/${encodeURIComponent(id)}`, 'DELETE');
+}
