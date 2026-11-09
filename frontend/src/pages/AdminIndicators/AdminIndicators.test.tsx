@@ -51,7 +51,7 @@ describe('Gerenciamento de indicadores', () => {
       name: 'Ocupação', value: 48, sectorId: 's1', periodId: 'p1', published: false,
     });
 
-    fireEvent.click(screen.getByRole('button', { name: 'Publicar', exact: true }));
+    fireEvent.click(screen.getByRole('button', { name: 'Publicar' }));
 
     expect(await screen.findByText('Publicado')).toBeInTheDocument();
     expect(fetchMock.mock.calls[4]?.[0]).toMatch(/\/indicators\/i1$/);
