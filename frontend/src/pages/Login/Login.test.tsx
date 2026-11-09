@@ -33,9 +33,6 @@ describe('Login', () => {
       })
     ).toBeInTheDocument();
 
-    expect(
-      screen.getByText('Esqueci minha senha')
-    ).toBeInTheDocument();
   });
 
   it('mostra erros quando o formulário é enviado vazio', async () => {

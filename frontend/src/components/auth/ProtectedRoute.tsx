@@ -1,12 +1,6 @@
-
+import { useEffect } from 'react';
 import { Navigate, Outlet } from 'react-router-dom';
-
-interface AuthUser {
-  id: string;
-  name: string;
-  email: string;
-  role: string;
-}
+import { clearSession, getSessionUser } from '../../services/authService';
 
 interface ProtectedRouteProps {
   allowedRoles?: string[];
@@ -15,39 +9,14 @@ interface ProtectedRouteProps {
 export function ProtectedRoute({
   allowedRoles = ['ADMIN'],
 }: ProtectedRouteProps) {
-  const token = sessionStorage.getItem('authToken');
-  const storedUser = sessionStorage.getItem('authUser');
+  const user = getSessionUser();
 
-  if (!token || !storedUser) {
-    return <Navigate to="/login" replace />;
-  }
+  useEffect(() => {
+    if (!user) clearSession();
+  }, [user]);
 
-  try {
-    const user: AuthUser = JSON.parse(storedUser);
+  if (!user) return <Navigate to="/login" replace />;
+  if (!allowedRoles.includes(user.role)) return <Navigate to="/" replace />;
 
-    const payload = JSON.parse(
-      atob(token.split('.')[1]),
-    );
-
-    if (
-      typeof payload.exp !== 'number' ||
-      payload.exp * 1000 <= Date.now()
-    ) {
-      sessionStorage.removeItem('authToken');
-      sessionStorage.removeItem('authUser');
-
-      return <Navigate to="/login" replace />;
-    }
-
-    if (!allowedRoles.includes(user.role)) {
-      return <Navigate to="/" replace />;
-    }
-
-    return <Outlet />;
-  } catch {
-    sessionStorage.removeItem('authToken');
-    sessionStorage.removeItem('authUser');
-
-    return <Navigate to="/login" replace />;
-  }
+  return <Outlet />;
 }

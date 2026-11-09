@@ -1,5 +1,6 @@
 import { type FormEvent, useCallback, useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { clearSession } from '../../services/authService';
 
 import {
   activateUser,
@@ -92,8 +93,7 @@ export function HRDashboard({
   const handleApiError = useCallback(
     (error: unknown, setMessage: (message: string) => void) => {
       if (error instanceof ManagementApiError && error.status === 401) {
-        sessionStorage.removeItem('authToken');
-        sessionStorage.removeItem('authUser');
+        clearSession();
         navigate('/login', { replace: true });
         return;
       }
@@ -261,6 +261,12 @@ export function HRDashboard({
         <Link to="/" className="hr-home-link">
         Voltar ao início
         </Link>
+        <button type="button" className="hr-logout-button" onClick={() => {
+          clearSession();
+          navigate('/login', { replace: true });
+        }}>
+          Sair
+        </button>
     </div>
       </header>
 

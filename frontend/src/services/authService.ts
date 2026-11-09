@@ -11,12 +11,27 @@ export function getDashboardPath(role: string): string | undefined {
 }
 
 export function getSessionUser(): AuthUser | null {
+  const token = sessionStorage.getItem('authToken');
+  const storedUser = sessionStorage.getItem('authUser');
+  if (!token || !storedUser) return null;
+
   try {
-    const user = sessionStorage.getItem('authUser');
-    return user ? JSON.parse(user) as AuthUser : null;
+    const encodedPayload = token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/');
+    const { exp } = JSON.parse(atob(encodedPayload));
+    if (typeof exp !== 'number' || !Number.isFinite(exp) || exp * 1000 <= Date.now()) {
+      return null;
+    }
+
+    const user = JSON.parse(storedUser) as AuthUser | null;
+    return typeof user?.role === 'string' ? user : null;
   } catch {
     return null;
   }
+}
+
+export function clearSession() {
+  sessionStorage.removeItem('authToken');
+  sessionStorage.removeItem('authUser');
 }
 
 export interface LoginRequest {

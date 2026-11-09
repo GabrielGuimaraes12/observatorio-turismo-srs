@@ -196,16 +196,6 @@ export function Home() {
               </div>
             </a>
 
-            <a href="#atrativos" className="shortcut-card">
-              <span className="shortcut-icon">⌖</span>
-              <div>
-                <h3>Atrativos</h3>
-                <p>
-                  Conheça os principais pontos turísticos do município.
-                </p>
-              </div>
-            </a>
-
             <a href="#sobre" className="shortcut-card">
               <span className="shortcut-icon">ⓘ</span>
               <div>
