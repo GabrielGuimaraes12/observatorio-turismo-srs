@@ -1,4 +1,3 @@
-
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
@@ -32,7 +31,12 @@ const indicators = [
     sectorId: 'sector-1',
     periodId: 'period-2026',
     sector: { id: 'sector-1', name: 'Hospedagem' },
-    period: { id: 'period-2026', name: '2026' },
+    period: {
+      id: 'period-2026',
+      name: '2026',
+      startDate: '2026-01-01T00:00:00.000Z',
+      endDate: '2026-12-31T00:00:00.000Z',
+    },
   },
   {
     id: '2',
@@ -44,7 +48,12 @@ const indicators = [
     sectorId: 'sector-1',
     periodId: 'period-2025',
     sector: { id: 'sector-1', name: 'Hospedagem' },
-    period: { id: 'period-2025', name: '2025' },
+    period: {
+      id: 'period-2025',
+      name: '2025',
+      startDate: '2025-01-01T00:00:00.000Z',
+      endDate: '2025-12-31T00:00:00.000Z',
+    },
   },
   {
     id: '3',
@@ -56,7 +65,12 @@ const indicators = [
     sectorId: 'sector-2',
     periodId: 'period-2026',
     sector: { id: 'sector-2', name: 'Comércio' },
-    period: { id: 'period-2026', name: '2026' },
+    period: {
+      id: 'period-2026',
+      name: '2026',
+      startDate: '2026-01-01T00:00:00.000Z',
+      endDate: '2026-12-31T00:00:00.000Z',
+    },
   },
   {
     id: '4',
@@ -68,7 +82,12 @@ const indicators = [
     sectorId: 'sector-2',
     periodId: 'period-2026',
     sector: { id: 'sector-2', name: 'Comércio' },
-    period: { id: 'period-2026', name: '2026' },
+    period: {
+      id: 'period-2026',
+      name: '2026',
+      startDate: '2026-01-01T00:00:00.000Z',
+      endDate: '2026-12-31T00:00:00.000Z',
+    },
   },
 ];
 

@@ -1,15 +1,29 @@
-import { describe, expect, it, vi } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
 import { ReportForm } from './ReportForm';
 import type { Report } from '../../types/report';
+import { getSectors } from '../../services/sectorService';
+
+vi.mock('../../services/sectorService', () => ({
+    getSectors: vi.fn(),
+}));
+
+const sectors = [
+    { id: 'sector-1', name: 'Turismo' },
+    { id: 'sector-2', name: 'Comércio' },
+];
 
 const publishedReport: Report = {
     id: 'report-1',
     name: 'Relatório publicado',
-    period: '2026',
+    period: 'janeiro de 2026 a dezembro de 2026',
+    periodId: 'period-1',
+    periodStartDate: '2026-01-01T00:00:00.000Z',
+    periodEndDate: '2026-12-31T00:00:00.000Z',
     sector: 'Turismo',
+    sectorId: 'sector-1',
     description: 'Relatório de teste',
     pdfUrl: '/reports/relatorio.pdf',
     published: true,
@@ -18,7 +32,12 @@ const publishedReport: Report = {
 };
 
 describe('ReportForm', () => {
-    it('preserva o estado de publicação ao editar um relatório publicado', async () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+        vi.mocked(getSectors).mockResolvedValue(sectors);
+    });
+
+    it('preserva os dados e o estado de publicação ao editar um relatório publicado', async () => {
         const user = userEvent.setup();
         const onSave = vi.fn();
         const onCancel = vi.fn();
@@ -31,48 +50,77 @@ describe('ReportForm', () => {
             />,
         );
 
+        await screen.findByRole('option', { name: 'Turismo' });
+
+        expect(screen.getByLabelText('Nome do relatório')).toHaveValue(
+            'Relatório publicado',
+        );
+        expect(screen.getByLabelText('Data inicial')).toHaveValue('2026-01-01');
+        expect(screen.getByLabelText('Data final')).toHaveValue('2026-12-31');
+        expect(screen.getByLabelText('Setor')).toHaveValue('sector-1');
+
         await user.click(screen.getByRole('button', { name: /salvar/i }));
 
         expect(onSave).toHaveBeenCalledWith(
             expect.objectContaining({
-            id: 'report-1',
-            published: true,
+                id: 'report-1',
+                periodStartDate: '2026-01-01',
+                periodEndDate: '2026-12-31',
+                sectorId: 'sector-1',
+                published: true,
             }),
         );
     });
 
-    
-it('cria um relatório como não publicado por padrão', async () => {
-    const user = userEvent.setup();
-    const onSave = vi.fn();
-    const onCancel = vi.fn();
+    it('cria um relatório como não publicado por padrão', async () => {
+        const user = userEvent.setup();
+        const onSave = vi.fn();
+        const onCancel = vi.fn();
 
-    render(<ReportForm onSave={onSave} onCancel={onCancel} />);
+        render(<ReportForm onSave={onSave} onCancel={onCancel} />);
 
-    await user.type(
-        screen.getByLabelText('Nome do relatório'),
-        'Novo relatório',
-    );
-    await user.type(
-        screen.getByLabelText('Período de referência'),
-        '2026',
-    );
-    await user.type(
-        screen.getByLabelText('Descrição'),
-        'Descrição do novo relatório',
-    );
-    await user.type(
-        screen.getByLabelText('URL do PDF'),
-        '/reports/novo-relatorio.pdf',
-    );
+        await screen.findByRole('option', { name: 'Turismo' });
 
-    await user.click(screen.getByRole('button', { name: /salvar/i }));
+        await user.type(
+            screen.getByLabelText('Nome do relatório'),
+            'Novo relatório',
+        );
+        await user.type(
+            screen.getByLabelText('Data inicial'),
+            '2026-01-01',
+        );
+        await user.type(
+            screen.getByLabelText('Data final'),
+            '2026-12-31',
+        );
+        await user.selectOptions(
+            screen.getByLabelText('Setor'),
+            'sector-1',
+        );
+        await user.type(
+            screen.getByLabelText('Descrição'),
+            'Descrição do novo relatório',
+        );
+        await user.type(
+            screen.getByLabelText('URL do PDF'),
+            '/reports/novo-relatorio.pdf',
+        );
 
-    expect(onSave).toHaveBeenCalledWith(
-        expect.objectContaining({
-            name: 'Novo relatório',
-            published: false,
-        }),
-    );
-});
+        await user.click(screen.getByRole('button', { name: /salvar/i }));
+
+        await waitFor(() => {
+            expect(onSave).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    name: 'Novo relatório',
+                    periodStartDate: '2026-01-01',
+                    periodEndDate: '2026-12-31',
+                    sector: 'Turismo',
+                    sectorId: 'sector-1',
+                    description: 'Descrição do novo relatório',
+                    pdfUrl: '/reports/novo-relatorio.pdf',
+                    published: false,
+                }),
+            );
+        });
+    });
 });

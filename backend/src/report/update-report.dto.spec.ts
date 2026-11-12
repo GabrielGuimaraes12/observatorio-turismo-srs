@@ -44,9 +44,26 @@ describe('UpdateReportDto', () => {
     expect(errors.some((e) => e.property === 'fileUrl')).toBe(true);
   });
 
-  it('still rejects a non-UUID periodId when provided', async () => {
-    const errors = await validateDto({ periodId: 'nope' });
-    expect(errors.some((e) => e.property === 'periodId')).toBe(true);
+  it('accepts a valid period with startDate and endDate when provided', async () => {
+    const errors = await validateDto({
+      period: {
+        startDate: '2026-01-01',
+        endDate: '2026-12-31',
+      },
+    });
+
+    expect(errors.some((e) => e.property === 'period')).toBe(false);
+  });
+
+  it('rejects an invalid period date when provided', async () => {
+    const errors = await validateDto({
+      period: {
+        startDate: 'invalid-date',
+        endDate: '2026-12-31',
+      },
+    });
+
+    expect(errors.length).toBeGreaterThan(0);
   });
 
   it('still rejects a non-boolean published when provided', async () => {
