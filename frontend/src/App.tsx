@@ -1,4 +1,3 @@
-
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 
 import { Home } from './pages/Home/Home';
@@ -9,6 +8,7 @@ import { Register } from './pages/Register/Register';
 
 import { AdminIndicators } from './pages/AdminIndicators/AdminIndicators';
 import { AdminReports } from './pages/AdminReports/AdminReports';
+import { AdminSectors } from './pages/AdminSectors/AdminSectors';
 import { AdminDashboard } from './pages/AdminDashboard/AdminDashboard';
 import { BusinessDashboard } from './pages/BusinessDashboard/BusinessDashboard';
 import { HRDashboard } from './pages/HRDashboard/HRDashboard';
@@ -40,6 +40,7 @@ function App() {
             element={<AdminReports />}
           />
           <Route path="/admin/indicadores" element={<AdminIndicators />} />
+          <Route path="/admin/setores" element={<AdminSectors />} />
         </Route>
 
         <Route element={<ProtectedRoute allowedRoles={['BUSINESS']} />}>

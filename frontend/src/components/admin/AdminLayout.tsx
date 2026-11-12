@@ -41,6 +41,10 @@ export function AdminLayout({ children }: AdminLayoutProps) {
             <NavLink to="/admin/indicadores">
                 Indicadores
             </NavLink>
+
+            <NavLink to="/admin/setores">
+                Setores
+            </NavLink>
             
             </nav>
 
