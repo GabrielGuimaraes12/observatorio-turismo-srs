@@ -95,3 +95,8 @@ export async function register(
 
   return result as LoginResponse;
 }
+
+export function logout(): void {
+  sessionStorage.removeItem('authToken');
+  sessionStorage.removeItem('authUser');
+}

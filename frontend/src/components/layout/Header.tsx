@@ -54,7 +54,7 @@ export function Header() {
 
           <NavLink to={dashboard ?? '/login'} className="nav-link">
             <span className="nav-icon"></span>
-            {dashboard ? 'Minha área' : 'Entrar'}
+            {dashboard ? 'Área Administrativa' : 'Entrar'}
           </NavLink>
 
         </nav>
