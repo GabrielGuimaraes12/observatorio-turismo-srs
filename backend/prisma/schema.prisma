@@ -45,6 +45,7 @@ model Sector {
   updatedAt   DateTime    @updatedAt
 
   indicators Indicator[]
+  reports Report[]
 }
 
 model Period {
@@ -57,6 +58,8 @@ model Period {
 
   indicators Indicator[]
   reports    Report[]
+
+  @@unique([startDate, endDate])
 }
 
 model Indicator {
@@ -86,6 +89,9 @@ model Report {
 
   periodId String?
   period   Period? @relation(fields: [periodId], references: [id])
+
+  sectorId String?
+  sector   Sector? @relation(fields: [sectorId], references: [id])
 
   authorId String?
   author   User?  @relation("ReportAuthor", fields: [authorId], references: [id])
