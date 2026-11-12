@@ -17,6 +17,8 @@ export interface ApiIndicator {
   period: {
     id: string;
     name: string;
+    startDate: string;
+    endDate: string;
   };
 }
 
@@ -40,10 +42,18 @@ export interface IndicatorReference {
   name: string;
 }
 
-type IndicatorInput = Pick<
-  ApiIndicator,
-  'name' | 'description' | 'value' | 'unit' | 'published' | 'sectorId' | 'periodId'
->;
+type IndicatorInput = {
+  name: string;
+  description?: string | null;
+  value: number;
+  unit?: string | null;
+  published?: boolean;
+  sectorId: string;
+  period: {
+    startDate: string;
+    endDate: string;
+  };
+};
 
 async function indicatorAdminRequest<T>(path: string, method = 'GET', input?: Partial<IndicatorInput>): Promise<T> {
   const token = sessionStorage.getItem('authToken');
@@ -71,7 +81,6 @@ export function getIndicatorManagementData() {
   return Promise.all([
     indicatorAdminRequest<ApiIndicator[]>('/indicators'),
     indicatorAdminRequest<IndicatorReference[]>('/sectors'),
-    indicatorAdminRequest<IndicatorReference[]>('/periods'),
   ]);
 }
 
