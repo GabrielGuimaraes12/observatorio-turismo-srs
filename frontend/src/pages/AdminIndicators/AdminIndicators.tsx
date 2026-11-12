@@ -1,5 +1,5 @@
 import { type FormEvent, useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { AdminLayout } from '../../components/admin/AdminLayout';
 import {
   type ApiIndicator,
   type IndicatorReference,
@@ -108,15 +108,26 @@ export function AdminIndicators() {
   const hasReferences = sectors.length > 0 && periods.length > 0;
 
   return (
-    <main className="admin-reports-page">
-      <header className="admin-reports-header">
-        <div>
-          <h1>Gerenciar indicadores</h1>
-          <p>Cadastre, edite e controle a publicação dos indicadores do Observatório.</p>
-        </div>
-        <Link to="/admin">Voltar ao Dashboard ADMIN</Link>
-      </header>
+    <AdminLayout>
+      <main className="admin-reports-page">
+        <header className="admin-reports-header">
+          <div>
+            <h1>Gerenciar indicadores</h1>
+            <p>Cadastre, edite e controle a publicação dos indicadores do Observatório.</p>
+          </div>
 
+        {!editing && hasReferences && (
+          <div className="admin-reports-header-actions">
+            <button
+              type="button"
+              disabled={changing}
+              onClick={() => openForm(null)}
+            >
+              + Novo indicador
+            </button>
+          </div>
+        )}
+      </header>
       <section className="admin-reports-list">
         {loading && <p role="status">Carregando indicadores…</p>}
         {loadError && (
@@ -165,9 +176,6 @@ export function AdminIndicators() {
           </form>
         ) : !loading && !loadError && (
           <>
-            <div className="admin-report-actions">
-              <button type="button" disabled={!hasReferences || changing} onClick={() => openForm(null)}>Novo indicador</button>
-            </div>
             {indicators.length === 0 ? <p>Nenhum indicador cadastrado.</p> : (
               <div className="admin-reports-table-wrapper">
                 <table className="admin-reports-table">
@@ -205,5 +213,6 @@ export function AdminIndicators() {
         )}
       </section>
     </main>
+  </AdminLayout>
   );
 }
