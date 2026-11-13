@@ -308,12 +308,11 @@ describe('Sectors (e2e)', () => {
       const sector = await prisma.sector.create({
         data: { name: `ComIndicador ${Date.now()}` },
       });
+      
+      const startDate = new Date(Date.UTC(2024, 0, 1) + Math.floor(Math.random() * 1e10));
+      const endDate   = new Date(startDate.getTime() + 365 * 24 * 60 * 60 * 1000);
       const period = await prisma.period.create({
-        data: {
-          name: `p-${Date.now()}`,
-          startDate: new Date('2024-01-01'),
-          endDate: new Date('2024-12-31'),
-        },
+        data: { name: `p-${Date.now()}`, startDate, endDate },
       });
       const indicator = await prisma.indicator.create({
         data: { name: 'Ind', value: 1, sectorId: sector.id, periodId: period.id },
