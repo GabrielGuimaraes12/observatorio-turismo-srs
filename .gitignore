@@ -19,6 +19,9 @@ dist/
 # Vite
 .vite/
 
+# Test coverage output
+coverage/
+
 # Logs
 *.log
 
