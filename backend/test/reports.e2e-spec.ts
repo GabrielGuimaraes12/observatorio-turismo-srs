@@ -18,6 +18,7 @@ describe('Reports (e2e)', () => {
   let otherBusinessToken: string;
   let otherBusinessId: string;
   let periodId: string;
+  let periodDates: { startDate: string; endDate: string };
 
   const createdReportIds: string[] = [];
   const createdUserIds: string[] = [];
@@ -84,11 +85,15 @@ describe('Reports (e2e)', () => {
     const period = await prisma.period.create({
       data: {
         name: `e2e-period-${Date.now()}`,
-        startDate: new Date('2024-01-01'),
-        endDate: new Date('2024-12-31'),
+        startDate: new Date('2033-01-01'),
+        endDate: new Date('2033-12-31'),
       },
     });
     periodId = period.id;
+    periodDates = {
+      startDate: period.startDate.toISOString(),
+      endDate: period.endDate.toISOString(),
+    };
   });
 
   afterAll(async () => {
@@ -326,6 +331,7 @@ describe('Reports (e2e)', () => {
   //  POST /reports
   // ══════════════════════════════════════════════════════════════════════════
   describe('POST /api/reports', () => {
+    const testPdf = Buffer.from('%PDF-1.4\n1 0 obj\n<<>>\nendobj\n%%EOF\n',);
     it('returns 401 when no token is provided', async () => {
       await request(app.getHttpServer())
         .post('/api/reports')
@@ -345,12 +351,10 @@ describe('Reports (e2e)', () => {
       const res = await request(app.getHttpServer())
         .post('/api/reports')
         .set('Authorization', `Bearer ${adminToken}`)
-        .send({
-          title: 'Created by admin',
-          description: 'desc',
-          fileUrl: 'https://cdn.example.com/admin.pdf',
-          periodId,
-        })
+        .field('title', 'Created by admin')
+        .field('description', 'desc')
+        .field('period', JSON.stringify(periodDates))
+        .attach('file', testPdf, 'admin.pdf')
         .expect(201);
 
       createdReportIds.push(res.body.id);
@@ -358,12 +362,13 @@ describe('Reports (e2e)', () => {
       expect(res.body).toMatchObject({
         title: 'Created by admin',
         description: 'desc',
-        fileUrl: 'https://cdn.example.com/admin.pdf',
         published: false,
         periodId,
         authorId: adminId,
       });
+
       expect(res.body.id).toEqual(expect.any(String));
+      expect(res.body.fileUrl).toMatch(/^[0-9a-f-]{36}\.pdf$/i);
       expect(res.body.period).toMatchObject({ id: periodId });
     });
 
@@ -371,31 +376,34 @@ describe('Reports (e2e)', () => {
       const res = await request(app.getHttpServer())
         .post('/api/reports')
         .set('Authorization', `Bearer ${businessToken}`)
-        .send({
-          title: 'Created by business',
-          fileUrl: 'https://x/biz-created.pdf',
-          periodId,
-        })
+        .field('title', 'Created by business')
+        .field('period', JSON.stringify(periodDates))
+        .attach('file', testPdf, 'business.pdf')
         .expect(201);
 
       createdReportIds.push(res.body.id);
 
       expect(res.body.authorId).toBe(businessId);
       expect(res.body.published).toBe(false);
+      expect(res.body.fileUrl).toMatch(/^[0-9a-f-]{36}\.pdf$/i);
 
-      // The business can immediately see its own draft.
       const list = await request(app.getHttpServer())
         .get('/api/reports')
         .set('Authorization', `Bearer ${businessToken}`)
         .expect(200);
-      expect(list.body.some((r: { id: string }) => r.id === res.body.id)).toBe(true);
+
+      expect(
+        list.body.some((r: { id: string }) => r.id === res.body.id),
+      ).toBe(true);
     });
 
     it('returns 403 when BUSINESS tries to publish on creation', async () => {
       await request(app.getHttpServer())
         .post('/api/reports')
         .set('Authorization', `Bearer ${businessToken}`)
-        .send({ title: 'X', fileUrl: 'https://x/y.pdf', published: true })
+        .field('title', 'X')
+        .field('published', 'true')
+        .attach('file', testPdf, 'business.pdf')
         .expect(403);
     });
 

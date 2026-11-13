@@ -16,6 +16,16 @@ describe('Periods (e2e)', () => {
   const createdPeriodIds: string[] = [];
   const createdUserIds: string[] = [];
 
+  let periodDateCounter = 0;
+
+  function uniquePeriodDates() {
+    const startDate = new Date(Date.now() + periodDateCounter++ * 86_400_000,);
+
+    const endDate = new Date(startDate.getTime() + 86_400_000,);
+
+    return { startDate, endDate };
+  }
+
   const uniqueEmail = (prefix: string) =>
     `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}@example.com`;
 
@@ -102,8 +112,7 @@ describe('Periods (e2e)', () => {
       const created = await prisma.period.create({
         data: {
           name: `2024-${Date.now()}`,
-          startDate: new Date('2024-01-01'),
-          endDate: new Date('2024-12-31'),
+          ...uniquePeriodDates(),
         },
       });
       createdPeriodIds.push(created.id);
@@ -135,12 +144,15 @@ describe('Periods (e2e)', () => {
   // POST /api/periods
   // -------------------------------------------------------------------------
   describe('POST /api/periods', () => {
-    const validPayload = () => ({
-      name: `Q1-${Date.now()}`,
-      startDate: '2026-01-01',
-      endDate: '2026-03-31',
-    });
+    const validPayload = () => {
+    const { startDate, endDate } = uniquePeriodDates();
 
+    return {
+      name: `Q1-${Date.now()}`,
+      startDate: startDate.toISOString().split('T')[0],
+      endDate: endDate.toISOString().split('T')[0],
+    };
+  };
     it('returns 401 when no token is provided', async () => {
       await request(app.getHttpServer())
         .post('/api/periods')
@@ -221,8 +233,7 @@ describe('Periods (e2e)', () => {
       const created = await prisma.period.create({
         data: {
           name: `ToUpdate-${Date.now()}`,
-          startDate: new Date('2024-01-01'),
-          endDate: new Date('2024-12-31'),
+          ...uniquePeriodDates(),
         },
       });
       createdPeriodIds.push(created.id);
@@ -290,8 +301,7 @@ describe('Periods (e2e)', () => {
       const r = await prisma.period.create({
         data: {
           name: `Del-${Date.now()}`,
-          startDate: new Date('2024-01-01'),
-          endDate: new Date('2024-12-31'),
+          ...uniquePeriodDates(),
         },
       });
       createdPeriodIds.push(r.id);
@@ -308,8 +318,7 @@ describe('Periods (e2e)', () => {
       const r = await prisma.period.create({
         data: {
           name: `Del-${Date.now()}`,
-          startDate: new Date('2024-01-01'),
-          endDate: new Date('2024-12-31'),
+          ...uniquePeriodDates(),
         },
       });
       createdPeriodIds.push(r.id);
@@ -324,8 +333,7 @@ describe('Periods (e2e)', () => {
       const r = await prisma.period.create({
         data: {
           name: `Del-${Date.now()}`,
-          startDate: new Date('2024-01-01'),
-          endDate: new Date('2024-12-31'),
+          ...uniquePeriodDates(),
         },
       });
 
@@ -344,8 +352,7 @@ describe('Periods (e2e)', () => {
       const period = await prisma.period.create({
         data: {
           name: `ComDep-${Date.now()}`,
-          startDate: new Date('2024-01-01'),
-          endDate: new Date('2024-12-31'),
+          ...uniquePeriodDates(),
         },
       });
       const sector = await prisma.sector.create({

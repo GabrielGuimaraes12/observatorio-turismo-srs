@@ -97,8 +97,8 @@ describe('Indicators (e2e)', () => {
     const period = await prisma.period.create({
       data: {
         name: `e2e-period-${Date.now()}`,
-        startDate: new Date('2026-01-01'),
-        endDate: new Date('2026-12-31'),
+        startDate: new Date('2032-01-01'),
+        endDate: new Date('2032-12-31'),
       },
     });
 

@@ -311,8 +311,8 @@ describe('Sectors (e2e)', () => {
       const period = await prisma.period.create({
         data: {
           name: `p-${Date.now()}`,
-          startDate: new Date('2024-01-01'),
-          endDate: new Date('2024-12-31'),
+          startDate: new Date('2034-01-01'),
+          endDate: new Date('2034-12-31'),
         },
       });
       const indicator = await prisma.indicator.create({

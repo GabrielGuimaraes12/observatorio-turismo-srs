@@ -15,6 +15,8 @@ describe('Indicators (e2e)', () => {
   let sectorId: string;
   let periodId: string;
 
+  let periodDates: { startDate: string; endDate: string };
+
   const createdIndicatorIds: string[] = [];
   const createdUserIds: string[] = [];
 
@@ -73,11 +75,15 @@ describe('Indicators (e2e)', () => {
     const period = await prisma.period.create({
       data: {
         name: `e2e-period-${Date.now()}`,
-        startDate: new Date('2024-01-01'),
-        endDate: new Date('2024-12-31'),
+        startDate: new Date('2031-01-01'),
+        endDate: new Date('2031-12-31'),
       },
     });
     periodId = period.id;
+    periodDates = {
+      startDate: period.startDate.toISOString(),
+      endDate: period.endDate.toISOString(),
+    };
   });
 
   afterAll(async () => {
@@ -173,7 +179,7 @@ describe('Indicators (e2e)', () => {
       unit: '%',
       published: true,
       sectorId,
-      periodId,
+      period: periodDates,
     });
 
     it('returns 401 when no token is provided', async () => {
