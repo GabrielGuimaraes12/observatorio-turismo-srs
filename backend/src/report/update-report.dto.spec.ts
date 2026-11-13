@@ -21,14 +21,17 @@ describe('UpdateReportDto', () => {
     const errors = await validateDto({
       title: 'Renamed',
       description: 'New description',
-      fileUrl: 'https://cdn.example.com/new.pdf',
       published: false,
-      periodId: '11111111-1111-4111-8111-111111111111',
+      period: {
+        startDate: '2026-01-01',
+        endDate: '2026-12-31',
+      },
+      sectorId: '11111111-1111-4111-8111-111111111111',
     });
+
     expect(errors).toHaveLength(0);
   });
 
-  // Validators from CreateReportDto must still apply when a field is present.
   it('still rejects a title longer than 255 chars', async () => {
     const errors = await validateDto({ title: 'a'.repeat(256) });
     expect(errors.some((e) => e.property === 'title')).toBe(true);
@@ -37,11 +40,6 @@ describe('UpdateReportDto', () => {
   it('still rejects an empty title when provided', async () => {
     const errors = await validateDto({ title: '' });
     expect(errors.some((e) => e.property === 'title')).toBe(true);
-  });
-
-  it('still rejects an empty fileUrl when provided', async () => {
-    const errors = await validateDto({ fileUrl: '' });
-    expect(errors.some((e) => e.property === 'fileUrl')).toBe(true);
   });
 
   it('accepts a valid period with startDate and endDate when provided', async () => {
@@ -69,5 +67,11 @@ describe('UpdateReportDto', () => {
   it('still rejects a non-boolean published when provided', async () => {
     const errors = await validateDto({ published: 'true' });
     expect(errors.some((e) => e.property === 'published')).toBe(true);
+  });
+
+  it('rejects an invalid sectorId when provided', async () => {
+    const errors = await validateDto({ sectorId: 'invalid-id' });
+
+    expect(errors.some((e) => e.property === 'sectorId')).toBe(true);
   });
 });

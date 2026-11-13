@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
 import { ReportForm } from './ReportForm';
@@ -68,16 +68,20 @@ describe('ReportForm', () => {
                 periodEndDate: '2026-12-31',
                 sectorId: 'sector-1',
                 published: true,
+                pdfUrl: '/reports/relatorio.pdf',
             }),
+            null,
         );
     });
 
-    it('cria um relatório como não publicado por padrão', async () => {
+    it('cria um relatório como não publicado e envia o PDF selecionado', async () => {
         const user = userEvent.setup();
         const onSave = vi.fn();
         const onCancel = vi.fn();
 
-        render(<ReportForm onSave={onSave} onCancel={onCancel} />);
+        const { container } = render(
+            <ReportForm onSave={onSave} onCancel={onCancel} />,
+        );
 
         await screen.findByRole('option', { name: 'Turismo' });
 
@@ -101,26 +105,35 @@ describe('ReportForm', () => {
             screen.getByLabelText('Descrição'),
             'Descrição do novo relatório',
         );
-        await user.type(
-            screen.getByLabelText('URL do PDF'),
-            '/reports/novo-relatorio.pdf',
+
+        const pdfFile = new File(
+            ['%PDF-1.4 conteúdo de teste'],
+            'novo-relatorio.pdf',
+            { type: 'application/pdf' },
         );
+
+        const fileInput = container.querySelector(
+            'input[type="file"]',
+        ) as HTMLInputElement;
+
+        await user.upload(fileInput, pdfFile);
+
+        expect(screen.getByText('novo-relatorio.pdf')).toBeInTheDocument();
 
         await user.click(screen.getByRole('button', { name: /salvar/i }));
 
-        await waitFor(() => {
-            expect(onSave).toHaveBeenCalledWith(
-                expect.objectContaining({
-                    name: 'Novo relatório',
-                    periodStartDate: '2026-01-01',
-                    periodEndDate: '2026-12-31',
-                    sector: 'Turismo',
-                    sectorId: 'sector-1',
-                    description: 'Descrição do novo relatório',
-                    pdfUrl: '/reports/novo-relatorio.pdf',
-                    published: false,
-                }),
-            );
-        });
+        expect(onSave).toHaveBeenCalledWith(
+            expect.objectContaining({
+                name: 'Novo relatório',
+                periodStartDate: '2026-01-01',
+                periodEndDate: '2026-12-31',
+                sector: 'Turismo',
+                sectorId: 'sector-1',
+                description: 'Descrição do novo relatório',
+                pdfUrl: '',
+                published: false,
+            }),
+            pdfFile,
+        );
     });
 });

@@ -28,10 +28,6 @@ export class CreateReportDto {
   @IsString()
   description?: string;
 
-  @IsString()
-  @MinLength(1)
-  fileUrl: string;
-
   @IsOptional()
   @IsBoolean()
   published?: boolean;

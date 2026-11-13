@@ -39,3 +39,6 @@ generated/
 **/.claude/
 **/.windsurf/
 **/skills-lock.json
+
+# Uploaded files
+backend/uploads/

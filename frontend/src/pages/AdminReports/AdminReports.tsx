@@ -57,12 +57,12 @@ export function AdminReports() {
         setIsFormOpen(true);
     }
 
-    async function handleSave(report: Report) {
+    
+    async function handleSave(report: Report, file: File | null) {
         try {
             const reportData = {
                 title: report.name,
                 description: report.description,
-                fileUrl: report.pdfUrl,
                 published: report.published,
                 period: {
                     startDate: report.periodStartDate,
@@ -74,7 +74,8 @@ export function AdminReports() {
             if (selectedReport) {
                 const updatedReport = await updateReport(
                     report.id,
-                    reportData
+                    reportData,
+                    file
                 );
 
                 setReports((currentReports) =>
@@ -85,10 +86,18 @@ export function AdminReports() {
                     )
                 );
             } else {
-                const createdReport = await createReport({
-                    ...reportData,
-                    published: false,
-                });
+                if (!file) {
+                    window.alert('Selecione um arquivo PDF para cadastrar o relatório.');
+                    return;
+                }
+
+                const createdReport = await createReport(
+                    {
+                        ...reportData,
+                        published: false,
+                    },
+                    file
+                );
 
                 setReports((currentReports) => [
                     createdReport,
@@ -111,7 +120,6 @@ export function AdminReports() {
         setIsFormOpen(false);
         setSelectedReport(undefined);
     }
-
     
     async function handleDelete(id: string) {
         const confirmed = window.confirm('Tem certeza de que deseja excluir este relatório?');
@@ -147,7 +155,6 @@ export function AdminReports() {
             await updateReport(report.id, {
                 title: report.name,
                 description: report.description,
-                fileUrl: report.pdfUrl,
                 published: newPublishedStatus,
             });
 

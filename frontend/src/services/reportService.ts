@@ -2,7 +2,7 @@ import type { Report } from '../types/report';
 import { getSessionUser } from './authService';
 
 const API_URL =
-  import.meta.env.VITE_API_URL ?? 'http://localhost:3000/api';
+    import.meta.env.VITE_API_URL ?? 'http://localhost:3000/api';
 
 interface ApiReport {
     id: string;
@@ -29,12 +29,10 @@ interface ApiReport {
 }
 
 function mapApiReport(report: ApiReport): Report {
-    const periodLabel = report.period?.name ?? '';
-
     return {
         id: report.id,
         name: report.title,
-        period: periodLabel,
+        period: report.period?.name ?? '',
         periodId: report.periodId,
         periodStartDate: report.period?.startDate ?? '',
         periodEndDate: report.period?.endDate ?? '',
@@ -44,33 +42,15 @@ function mapApiReport(report: ApiReport): Report {
         pdfUrl: report.fileUrl,
         published: report.published,
         createdAt: report.createdAt,
-        updatedAt: report.updatedAt
-  };
-}
-
-export async function getReports(scope: 'public' | 'admin' | 'own' = 'public'): Promise<Report[]> {
-    const authorId = scope === 'own' ? getSessionUser()?.id : undefined;
-    const options = scope === 'public' ? undefined : {
-        headers: { Authorization: `Bearer ${getReportToken()}` },
+        updatedAt: report.updatedAt,
     };
-    const response = await fetch(`${API_URL}/reports`, options);
-
-    if (!response.ok) {
-        throw new Error('Não foi possível carregar os relatórios.');
-    }
-
-    const data = (await response.json()) as ApiReport[];
-
-    const reports = scope === 'own' ? data.filter((report) => report.authorId === authorId) : data;
-    return reports.map(mapApiReport);
 }
 
 export interface CreateReportRequest {
     title: string;
     description: string;
-    fileUrl: string;
     published: boolean;
-        period?: {
+    period?: {
         startDate: string;
         endDate: string;
     } | null;
@@ -87,61 +67,118 @@ function getReportToken(): string {
     return token;
 }
 
-export async function createReport(report: CreateReportRequest): Promise<Report> {
-    const token = getReportToken();
-    const response = await fetch(`${API_URL}/reports`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(report),
-    });
+function createReportFormData(
+    report: CreateReportRequest,
+    file?: File | null,
+): FormData {
+    const formData = new FormData();
 
+    formData.append('title', report.title);
+    formData.append('description', report.description);
+    formData.append('published', String(report.published));
+
+    if (report.period) {
+        formData.append('period', JSON.stringify(report.period));
+    }
+
+    if (report.sectorId) {
+        formData.append('sectorId', report.sectorId);
+    }
+
+    if (file) {
+        formData.append('file', file);
+    }
+
+    return formData;
+}
+
+async function handleReportResponse(
+    response: Response,
+    defaultMessage: string,
+): Promise<Report> {
     if (!response.ok) {
         const data = await response.json().catch(() => null);
-        const message = Array.isArray(data?.message) ? data.message.join(', ') : data?.message;
+        const message = Array.isArray(data?.message)
+            ? data.message.join(', ')
+            : data?.message;
 
-        throw new Error(message || 'Não foi possível cadastrar o relatório.');
+        throw new Error(message || defaultMessage);
     }
 
     return mapApiReport(await response.json() as ApiReport);
 }
 
+export async function getReports(
+    scope: 'public' | 'admin' | 'own' = 'public',
+): Promise<Report[]> {
+    const authorId = scope === 'own' ? getSessionUser()?.id : undefined;
 
-export async function updateReport(id: string, report: CreateReportRequest): Promise<Report> {
-    const token = sessionStorage.getItem('authToken');
+    const options = scope === 'public'
+        ? undefined
+        : {
+            headers: {
+                Authorization: `Bearer ${getReportToken()}`,
+            },
+        };
 
-    if (!token) {
-        throw new Error('Sua sessão expirou. Entre novamente.');
+    const response = await fetch(`${API_URL}/reports`, options);
+
+    if (!response.ok) {
+        throw new Error('Não foi possível carregar os relatórios.');
     }
+
+    const data = await response.json() as ApiReport[];
+
+    const reports = scope === 'own'
+        ? data.filter((report) => report.authorId === authorId)
+        : data;
+
+    return reports.map(mapApiReport);
+}
+
+export async function createReport(
+    report: CreateReportRequest,
+    file: File,
+): Promise<Report> {
+    const token = getReportToken();
+
+    const response = await fetch(`${API_URL}/reports`, {
+        method: 'POST',
+        headers: {
+            Authorization: `Bearer ${token}`,
+        },
+        body: createReportFormData(report, file),
+    });
+
+    return handleReportResponse(
+        response,
+        'Não foi possível cadastrar o relatório.',
+    );
+}
+
+export async function updateReport(
+    id: string,
+    report: CreateReportRequest,
+    file?: File | null,
+): Promise<Report> {
+    const token = getReportToken();
 
     const response = await fetch(`${API_URL}/reports/${id}`, {
         method: 'PATCH',
         headers: {
-            'Content-Type': 'application/json',
             Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify(report),
+        body: createReportFormData(report, file),
     });
 
-    if (!response.ok) {
-        const data = await response.json().catch(() => null);
-        const message = Array.isArray(data?.message) ? data.message.join(', ') : data?.message;
-
-        throw new Error(message || 'Não foi possível atualizar o relatório.');
-    }
-
-    return mapApiReport(await response.json() as ApiReport);
+    return handleReportResponse(
+        response,
+        'Não foi possível atualizar o relatório.',
+    );
 }
 
-
 export async function deleteReport(id: string): Promise<void> {
-    const token = sessionStorage.getItem('authToken');
-
-    if (!token) {
-        throw new Error('Sua sessão expirou. Entre novamente.');
-    }
+    const token = getReportToken();
 
     const response = await fetch(`${API_URL}/reports/${id}`, {
         method: 'DELETE',
@@ -158,4 +195,29 @@ export async function deleteReport(id: string): Promise<void> {
 
         throw new Error(message || 'Não foi possível excluir o relatório.');
     }
+}
+
+
+
+export async function getReportPdfUrl(id: string): Promise<string> {
+    const token = sessionStorage.getItem('authToken');
+
+    const response = await fetch(`${API_URL}/reports/${id}/pdf`, {
+        headers: token
+            ? { Authorization: `Bearer ${token}` }
+            : {},
+    });
+
+    if (!response.ok) {
+        const data = await response.json().catch(() => null);
+        const message = Array.isArray(data?.message)
+            ? data.message.join(', ')
+            : data?.message;
+
+        throw new Error(message || 'Não foi possível abrir o PDF.');
+    }
+
+    const pdfBlob = await response.blob();
+
+    return URL.createObjectURL(pdfBlob);
 }
