@@ -14,19 +14,22 @@ describe('ReportsService', () => {
       update: Mock;
       delete: Mock;
     };
-    period: { findUnique: Mock, upsert: Mock };
+    period: { findUnique: Mock; upsert: Mock };
     sector: { findUnique: Mock };
   };
 
   const period = { id: 'period-1', name: '2024-Q1' };
   const sector = { id: 'sector-1', name: 'Turismo' };
-  const author = { id: 'user-business-1', name: 'Biz', email: 'biz@example.com' };
+  const author = {
+    id: 'user-business-1',
+    name: 'Biz',
+    email: 'biz@example.com',
+  };
 
   const publishedReport = {
     id: 'report-1',
     title: 'Published',
     description: 'desc',
-    fileUrl: 'https://x/pub.pdf',
     published: true,
     periodId: 'period-1',
     sectorId: 'sector-1',
@@ -45,6 +48,8 @@ describe('ReportsService', () => {
     published: false,
   };
 
+  const fileUrl = '550e8400-e29b-41d4-a716-446655440000.pdf';
+
   beforeEach(() => {
     prisma = {
       $transaction: vi.fn(async (callback) => callback(prisma)),
@@ -55,9 +60,13 @@ describe('ReportsService', () => {
         update: vi.fn(),
         delete: vi.fn(),
       },
-      period: { findUnique: vi.fn(), upsert: vi.fn(), },
+      period: {
+        findUnique: vi.fn(),
+        upsert: vi.fn(),
+      },
       sector: { findUnique: vi.fn() },
     };
+
     service = new ReportsService(prisma as unknown as PrismaService);
   });
 
@@ -123,15 +132,13 @@ describe('ReportsService', () => {
     });
 
     it('BUSINESS requester does not include drafts from other businesses', async () => {
-      // The Prisma query itself enforces this via authorId. Verify the
-      // filter contains authorId — that's the guard against cross-business
-      // draft leakage.
       prisma.report.findMany.mockResolvedValue([]);
 
       await service.findAll({ id: author.id, role: 'BUSINESS' });
 
       const call = prisma.report.findMany.mock.calls[0][0];
       const orClause = call.where.OR as Array<Record<string, unknown>>;
+
       expect(orClause).toContainEqual({
         authorId: author.id,
         published: false,
@@ -157,6 +164,7 @@ describe('ReportsService', () => {
           id: 'someone',
           role,
         });
+
         expect(result).toBe(publishedReport);
       }
     });
@@ -184,7 +192,10 @@ describe('ReportsService', () => {
       prisma.report.findUnique.mockResolvedValue(draftReport);
 
       await expect(
-        service.findOne('report-2', { id: 'other-business', role: 'BUSINESS' }),
+        service.findOne('report-2', {
+          id: 'other-business',
+          role: 'BUSINESS',
+        }),
       ).rejects.toBeInstanceOf(NotFoundException);
     });
 
@@ -225,7 +236,6 @@ describe('ReportsService', () => {
       const dto = {
         title: 'Annual',
         description: 'desc',
-        fileUrl: 'https://x/pub.pdf',
         published: true,
         period: {
           name: 'Período de teste',
@@ -235,7 +245,7 @@ describe('ReportsService', () => {
         sectorId: 'sector-1',
       };
 
-      await service.create(dto, author.id);
+      await service.create(dto, author.id, fileUrl);
 
       expect(prisma.period.upsert).toHaveBeenCalledWith({
         where: {
@@ -256,7 +266,7 @@ describe('ReportsService', () => {
         data: {
           title: 'Annual',
           description: 'desc',
-          fileUrl: 'https://x/pub.pdf',
+          fileUrl,
           published: true,
           periodId: period.id,
           sectorId: 'sector-1',
@@ -274,8 +284,9 @@ describe('ReportsService', () => {
       prisma.report.create.mockResolvedValue({ ...draftReport });
 
       await service.create(
-        { title: 'Draft', fileUrl: 'https://x/d.pdf' },
+        { title: 'Draft' },
         author.id,
+        fileUrl,
       );
 
       expect(prisma.report.create).toHaveBeenCalledWith(
@@ -289,8 +300,9 @@ describe('ReportsService', () => {
       prisma.report.create.mockResolvedValue(publishedReport);
 
       await service.create(
-        { title: 'T', fileUrl: 'https://x/y.pdf' },
+        { title: 'T' },
         'user-xyz',
+        fileUrl,
       );
 
       const call = prisma.report.create.mock.calls[0][0];
@@ -307,13 +319,13 @@ describe('ReportsService', () => {
       await service.create(
         {
           title: 'Annual',
-          fileUrl: 'https://x/pub.pdf',
           period: {
             startDate: startDate.toISOString(),
             endDate: endDate.toISOString(),
           },
         },
         author.id,
+        fileUrl,
       );
 
       expect(prisma.period.upsert).toHaveBeenCalledWith(
@@ -337,13 +349,13 @@ describe('ReportsService', () => {
       await service.create(
         {
           title: 'Annual',
-          fileUrl: 'https://x/pub.pdf',
           period: {
             startDate: startDate.toISOString(),
             endDate: endDate.toISOString(),
           },
         },
         author.id,
+        fileUrl,
       );
 
       expect(prisma.period.upsert).toHaveBeenCalledWith({
@@ -372,11 +384,9 @@ describe('ReportsService', () => {
       });
 
       await service.create(
-        {
-          title: 'Without period',
-          fileUrl: 'https://x/no-period.pdf',
-        },
+        { title: 'Without period' },
         author.id,
+        fileUrl,
       );
 
       expect(prisma.period.upsert).not.toHaveBeenCalled();
@@ -392,11 +402,9 @@ describe('ReportsService', () => {
       prisma.report.create.mockResolvedValue(publishedReport);
 
       await service.create(
-        {
-          title: 'Transactional report',
-          fileUrl: 'https://x/transaction.pdf',
-        },
+        { title: 'Transactional report' },
         author.id,
+        fileUrl,
       );
 
       expect(prisma.$transaction).toHaveBeenCalledTimes(1);
@@ -407,13 +415,13 @@ describe('ReportsService', () => {
         service.create(
           {
             title: 'Invalid period',
-            fileUrl: 'https://x/invalid.pdf',
             period: {
               startDate: '2026-12-31',
               endDate: '2026-01-01',
             },
           },
           author.id,
+          fileUrl,
         ),
       ).rejects.toThrow(BadRequestException);
 
@@ -437,20 +445,22 @@ describe('ReportsService', () => {
         where: { id: 'report-1' },
         include: expect.objectContaining({ period: true }),
       });
+
       expect(prisma.report.update).toHaveBeenCalledWith({
         where: { id: 'report-1' },
         data: { title: 'Renamed' },
         include: expect.objectContaining({ period: true }),
       });
+
       expect(result.title).toBe('Renamed');
     });
 
     it('throws NotFoundException and skips update when missing', async () => {
       prisma.report.findUnique.mockResolvedValue(null);
 
-      await expect(service.update('missing', { title: 'X' })).rejects.toBeInstanceOf(
-        NotFoundException,
-      );
+      await expect(
+        service.update('missing', { title: 'X' }),
+      ).rejects.toBeInstanceOf(NotFoundException);
 
       expect(prisma.report.update).not.toHaveBeenCalled();
     });
@@ -508,7 +518,10 @@ describe('ReportsService', () => {
     it('creates a new period when updating with different dates', async () => {
       const startDate = new Date('2025-01-01T00:00:00.000Z');
       const endDate = new Date('2025-12-31T00:00:00.000Z');
-      const newPeriod = { id: 'period-2025', name: 'janeiro de 2025 a dezembro de 2025' };
+      const newPeriod = {
+        id: 'period-2025',
+        name: 'janeiro de 2025 a dezembro de 2025',
+      };
 
       prisma.report.findUnique.mockResolvedValue(publishedReport);
       prisma.period.upsert.mockResolvedValue(newPeriod);
@@ -575,11 +588,6 @@ describe('ReportsService', () => {
           update: {},
         }),
       );
-      expect(prisma.period.upsert).toHaveBeenCalledWith(
-        expect.objectContaining({
-          update: {},
-        }),
-      );
     });
 
     it('rejects an invalid period when updating a report', async () => {
@@ -610,6 +618,7 @@ describe('ReportsService', () => {
       expect(prisma.report.delete).toHaveBeenCalledWith({
         where: { id: 'report-1' },
       });
+
       expect(result).toEqual({ success: true, id: 'report-1' });
     });
 

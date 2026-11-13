@@ -12,7 +12,6 @@ const validateDto = (data: unknown) => {
 describe('CreateReportDto', () => {
   const valid = {
     title: 'Annual report',
-    fileUrl: 'https://cdn.example.com/report.pdf',
   };
 
   it('accepts the minimal valid payload', async () => {
@@ -24,17 +23,19 @@ describe('CreateReportDto', () => {
       ...valid,
       description: 'A description',
       published: true,
-      periodId: '11111111-1111-4111-8111-111111111111',
+      period: {
+        startDate: '2026-01-01',
+        endDate: '2026-12-31',
+      },
+      sectorId: '11111111-1111-4111-8111-111111111111',
     });
+
     expect(errors).toHaveLength(0);
   });
 
-  it.each([
-    ['title', { fileUrl: valid.fileUrl }],
-    ['fileUrl', { title: valid.title }],
-  ])('rejects when %s is missing', async (_label, payload) => {
-    const errors = await validateDto(payload);
-    expect(errors.length).toBeGreaterThan(0);
+  it('rejects when title is missing', async () => {
+    const errors = await validateDto({});
+    expect(errors.some((e) => e.property === 'title')).toBe(true);
   });
 
   it('rejects an empty title', async () => {
@@ -43,13 +44,12 @@ describe('CreateReportDto', () => {
   });
 
   it('rejects a title longer than 255 chars', async () => {
-    const errors = await validateDto({ ...valid, title: 'a'.repeat(256) });
-    expect(errors.some((e) => e.property === 'title')).toBe(true);
-  });
+    const errors = await validateDto({
+      ...valid,
+      title: 'a'.repeat(256),
+    });
 
-  it('rejects an empty fileUrl', async () => {
-    const errors = await validateDto({ ...valid, fileUrl: '' });
-    expect(errors.some((e) => e.property === 'fileUrl')).toBe(true);
+    expect(errors.some((e) => e.property === 'title')).toBe(true);
   });
 
   it('rejects a non-string title', async () => {
@@ -58,7 +58,11 @@ describe('CreateReportDto', () => {
   });
 
   it('rejects non-boolean published', async () => {
-    const errors = await validateDto({ ...valid, published: 'yes' });
+    const errors = await validateDto({
+      ...valid,
+      published: 'yes',
+    });
+
     expect(errors.some((e) => e.property === 'published')).toBe(true);
   });
 
@@ -86,15 +90,23 @@ describe('CreateReportDto', () => {
     expect(errors.length).toBeGreaterThan(0);
   });
 
+  it('rejects an invalid sectorId', async () => {
+    const errors = await validateDto({
+      ...valid,
+      sectorId: 'invalid-id',
+    });
+
+    expect(errors.some((e) => e.property === 'sectorId')).toBe(true);
+  });
+
   it('ignores unknown properties only when whitelist+forbidNonWhitelisted are enabled', async () => {
-    // By default, class-validator does NOT strip unknown props;
-    // the ValidationPipe in main.ts does. This test proves that here.
     const dto = plainToInstance(CreateReportDto, {
       ...valid,
       malicious: 'x',
     });
+
     const errors = await validate(dto);
-    // The DTO itself still validates — the pipe is what rejects extras.
+
     expect(errors).toHaveLength(0);
     expect((dto as any).malicious).toBe('x');
   });

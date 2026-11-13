@@ -11,6 +11,7 @@ import {
   ApiNotFoundResponse,
   ApiParam,
   ApiUnauthorizedResponse,
+  ApiConsumes,
 } from '@nestjs/swagger';
 
 const REPORT_SCHEMA = {
@@ -25,7 +26,8 @@ const REPORT_SCHEMA = {
     },
     fileUrl: {
       type: 'string',
-      example: 'https://cdn.example.com/report.pdf',
+      example: '550e8400-e29b-41d4-a716-446655440000.pdf',
+      description: 'Internal PDF reference. Access the file through GET /reports/{id}/pdf.',
     },
     published: { type: 'boolean', example: false },
     periodId: { type: 'string', format: 'uuid', nullable: true },
@@ -113,31 +115,54 @@ export const ApiCreateReport = () =>
       description: `
 **Who can call:** ADMIN or BUSINESS.
 
-The periodId field (when provided) must reference an existing row — if it does not, the endpoint returns 404 naming the missing relation.
+The request must use multipart/form-data and include a PDF file in the "file" field.
 
-The published field defaults to false. BUSINESS requests with published: true are rejected with 403. A report created with published: false is a draft: it is not visible on the public list, but the author (if a BUSINESS) can still see it via GET /reports and GET /reports/:id.
+**File requirements:**
+- PDF format only.
+- Maximum size: 10 MB.
+- The backend generates the file reference automatically.
+
+The period field, when provided, must contain a valid JSON string representing the report period.
+
+The published field accepts the strings "true" or "false". It defaults to false.
+
+BUSINESS requests with published: true are rejected with 403.
 
 The authorId is set automatically from the caller's token. It cannot be chosen by the client.
       `,
     }),
+    ApiConsumes('multipart/form-data'),
     ApiBody({
-      type: CreateReportDto,
-      examples: {
-        publishedReport: {
-          summary: 'Published report with a period',
-          value: {
-            title: 'Relatório Anual 2024',
-            description: 'Resumo do ano',
-            fileUrl: 'https://cdn.example.com/report.pdf',
-            published: true,
-            periodId: '11111111-1111-4111-8111-111111111111',
+      schema: {
+        type: 'object',
+        required: ['title', 'file'],
+        properties: {
+          title: {
+            type: 'string',
+            example: 'Relatório Anual 2024',
           },
-        },
-        draftReport: {
-          summary: 'Minimal draft (title and fileUrl only)',
-          value: {
-            title: 'Rascunho',
-            fileUrl: 'https://cdn.example.com/draft.pdf',
+          description: {
+            type: 'string',
+            example: 'Resumo do ano',
+          },
+          file: {
+            type: 'string',
+            format: 'binary',
+            description: 'PDF file (maximum 10 MB).',
+          },
+          published: {
+            type: 'string',
+            enum: ['true', 'false'],
+            example: 'false',
+          },
+          period: {
+            type: 'string',
+            example: '{"startDate":"2024-01-01","endDate":"2024-12-31"}',
+            description: 'JSON string containing startDate and endDate.',
+          },
+          sectorId: {
+            type: 'string',
+            format: 'uuid',
           },
         },
       },
@@ -153,9 +178,11 @@ The authorId is set automatically from the caller's token. It cannot be chosen b
     ApiForbiddenResponse({
       description: 'Caller is not ADMIN or BUSINESS.',
     }),
-    ApiBadRequestResponse({ description: 'DTO validation failed.' }),
+    ApiBadRequestResponse({
+      description: 'DTO validation failed or PDF file is invalid.',
+    }),
     ApiNotFoundResponse({
-      description: 'periodId does not reference an existing period.',
+      description: 'The referenced period or sector does not exist.',
     }),
   );
 
@@ -167,28 +194,61 @@ export const ApiUpdateReport = () =>
       description: `
 **Who can call:** ADMIN only.
 
-All fields are optional. Omitting a field leaves it untouched.
+The request must use multipart/form-data.
 
-**Publishing a draft:** set published: true to make a draft visible on the public list. Any ADMIN can publish any draft — the authorId is not checked on update.
+All fields are optional. Omitting a field leaves it unchanged.
 
-**Clearing the period:** sending periodId: null detaches the relation. Sending undefined (or omitting the field) leaves it as-is.
+**PDF file:**
+- The "file" field is optional.
+- Only PDF files are accepted.
+- Maximum size: 10 MB.
+- If no new file is sent, the existing PDF is preserved.
+- If a new file is sent, it replaces the previous PDF.
+
+The period field, when provided, must contain a valid JSON string representing the report period.
+
+The published field accepts the strings "true" or "false".
+
+**Publishing a draft:** set published to "true" to make a draft visible on the public list.
+
+**Clearing the period:** send a period value representing the desired update according to the API's period handling. Omitting the field leaves it unchanged.
+
+The authorId cannot be changed by the client.
       `,
     }),
     ApiParam({ name: 'id', format: 'uuid', description: 'Report id.' }),
+    ApiConsumes('multipart/form-data'),
     ApiBody({
-      type: UpdateReportDto,
-      examples: {
-        rename: {
-          summary: 'Rename only',
-          value: { title: 'Renamed report' },
-        },
-        publish: {
-          summary: 'Publish the report',
-          value: { published: true },
-        },
-        detachPeriod: {
-          summary: 'Detach the period (clear the relation)',
-          value: { periodId: null },
+      schema: {
+        type: 'object',
+        properties: {
+          title: {
+            type: 'string',
+            example: 'Relatório Anual Atualizado',
+          },
+          description: {
+            type: 'string',
+            example: 'Resumo atualizado do ano',
+          },
+          file: {
+            type: 'string',
+            format: 'binary',
+            description: 'Optional PDF file (maximum 10 MB).',
+          },
+          published: {
+            type: 'string',
+            enum: ['true', 'false'],
+            example: 'true',
+          },
+          period: {
+            type: 'string',
+            example: '{"startDate":"2024-01-01","endDate":"2024-12-31"}',
+            description: 'JSON string containing startDate and endDate.',
+          },
+          sectorId: {
+            type: 'string',
+            format: 'uuid',
+          },
         },
       },
     }),
@@ -202,10 +262,10 @@ All fields are optional. Omitting a field leaves it untouched.
     ApiForbiddenResponse({ description: 'Caller is not ADMIN.' }),
     ApiNotFoundResponse({
       description:
-        'Report not found, or the provided periodId does not exist.',
+        'Report not found, or the provided period or sector does not exist.',
     }),
     ApiBadRequestResponse({
-      description: 'Invalid UUID or DTO validation failed.',
+      description: 'Invalid UUID, DTO validation failed, or PDF file is invalid.',
     }),
   );
 

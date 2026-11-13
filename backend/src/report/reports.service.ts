@@ -71,7 +71,7 @@ export class ReportsService {
     return report;
   }
 
-  async create(dto: CreateReportDto, authorId: string) {
+  async create(dto: CreateReportDto, authorId: string, fileUrl: string) {
     return this.prisma.$transaction(async (tx) => {
       let periodId: string | null = null;
 
@@ -113,7 +113,7 @@ export class ReportsService {
         data: {
           title: dto.title,
           description: dto.description,
-          fileUrl: dto.fileUrl,
+          fileUrl: fileUrl,
           published: dto.published ?? false,
           periodId,
           sectorId: dto.sectorId,
@@ -123,7 +123,7 @@ export class ReportsService {
       });
     });
   }
-  async update(id: string, dto: UpdateReportDto, requester?: Requester) {
+  async update(id: string, dto: UpdateReportDto, requester?: Requester, fileUrl?: string) {
     await this.findOne(id, requester);
 
     return this.prisma.$transaction(async (tx) => {
@@ -174,6 +174,7 @@ export class ReportsService {
             Object.entries(reportData).filter(([, value]) => value !== undefined),
           ),
           ...(periodId !== undefined ? { periodId } : {}),
+          ...(fileUrl !== undefined ? { fileUrl } : {}),
         },
         include: reportInclude,
       });
@@ -184,5 +185,19 @@ export class ReportsService {
     await this.findOne(id, requester);
     await this.prisma.report.delete({ where: { id } });
     return { success: true, id };
+  }
+
+  async isFileUsedByAnotherReport(
+    fileUrl: string,
+    reportId: string,
+  ): Promise<boolean> {
+    const count = await this.prisma.report.count({
+      where: {
+        fileUrl,
+        id: { not: reportId },
+      },
+    });
+
+    return count > 0;
   }
 }
