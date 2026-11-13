@@ -49,3 +49,35 @@ describe('UserLoginDto', () => {
     expect(errors.some((e) => e.property === 'email')).toBe(true);
   });
 });
+
+describe('UserCreateDto — invitationToken', () => {
+  const base = {
+    name: 'Alice',
+    email: 'alice@example.com',
+    password: 'Passw0rd!',
+  };
+
+  it('treats an empty string as absent', async () => {
+    const dto = plainToInstance(UserCreateDto, { ...base, invitationToken: '' });
+    expect(dto.invitationToken).toBeUndefined();
+    expect(await validate(dto)).toHaveLength(0);
+  });
+
+  it('treats whitespace-only as absent', async () => {
+    const dto = plainToInstance(UserCreateDto, { ...base, invitationToken: '   ' });
+    expect(dto.invitationToken).toBeUndefined();
+    expect(await validate(dto)).toHaveLength(0);
+  });
+
+  it('keeps a real token and validates it', async () => {
+    const dto = plainToInstance(UserCreateDto, { ...base, invitationToken: 'tok-123' });
+    expect(dto.invitationToken).toBe('tok-123');
+    expect(await validate(dto)).toHaveLength(0);
+  });
+
+  it('rejects a non-string token', async () => {
+    const dto = plainToInstance(UserCreateDto, { ...base, invitationToken: 42 });
+    const errors = await validate(dto);
+    expect(errors.some((e) => e.property === 'invitationToken')).toBe(true);
+  });
+});

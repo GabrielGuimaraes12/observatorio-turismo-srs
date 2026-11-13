@@ -2,7 +2,6 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication, ValidationPipe } from '@nestjs/common';
 import { Server } from 'node:http';
 import request from 'supertest';
-import * as bcrypt from 'bcrypt';
 import { AppModule } from './../src/app.module.js';
 import { PrismaService } from './../src/prisma/prisma.service.js';
 
@@ -13,6 +12,7 @@ describe('Reports (e2e)', () => {
   let adminToken: string;
   let adminId: string;
   let userToken: string;
+  let hrToken: string;
   let businessToken: string;
   let businessId: string;
   let otherBusinessToken: string;
@@ -21,6 +21,10 @@ describe('Reports (e2e)', () => {
 
   const createdReportIds: string[] = [];
   const createdUserIds: string[] = [];
+  const createdPeriodIds: string[] = [];
+
+  // Minimal but structurally valid PDF bytes for the upload.
+  const fakePdf = () => Buffer.from('%PDF-1.4\n%%EOF\n');
 
   const uniqueEmail = (prefix: string) =>
     `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}@example.com`;
@@ -35,12 +39,27 @@ describe('Reports (e2e)', () => {
   };
 
   const promote = async (userId: string, role: string) => {
-    await prisma.user.update({
-      where: { id: userId },
-      data: { role },
-    });
+    await prisma.user.update({ where: { id: userId }, data: { role } });
     const row = await prisma.user.findUnique({ where: { id: userId } });
     expect(row?.role).toBe(role);
+  };
+
+  const validPeriod = () => ({
+    startDate: '2024-01-01',
+    endDate: '2024-12-31',
+  });
+
+  // Multipart POST helper — mirrors ReportsController.create's
+  // FileInterceptor('file') + TransformReportFormInterceptor contract.
+  const postReportMultipart = (token: string) => {
+    const p = validPeriod();
+    return request(app.getHttpServer())
+      .post('/api/reports')
+      .set('Authorization', `Bearer ${token}`)
+      .field('title', 'Admin draft via API')
+      .field('fileUrl', 'placeholder') // ← remove; see note below
+      .field('period[startDate]', p.startDate)
+      .field('period[endDate]', p.endDate);
   };
 
   beforeAll(async () => {
@@ -61,10 +80,12 @@ describe('Reports (e2e)', () => {
 
     prisma = app.get(PrismaService);
 
-    // Fixtures — all created as USER then promoted, since the register
-    // endpoint only creates USERs without an invitation token.
     const user = await register('Regular User', uniqueEmail('user'));
     userToken = user.token;
+
+    const hr = await register('HR User', uniqueEmail('hr'));
+    await promote(hr.user.id, 'HR');
+    hrToken = hr.token;
 
     const admin = await register('Admin User', uniqueEmail('admin'));
     await promote(admin.user.id, 'ADMIN');
@@ -81,23 +102,24 @@ describe('Reports (e2e)', () => {
     otherBusinessToken = otherBiz.token;
     otherBusinessId = otherBiz.user.id;
 
+    const year = 2100 + Math.floor(Math.random() * 100);
+    const startDate = new Date(Date.UTC(year, 0, 1));
+    const endDate = new Date(Date.UTC(year, 11, 31));
+
     const period = await prisma.period.create({
-      data: {
-        name: `e2e-period-${Date.now()}`,
-        startDate: new Date('2024-01-01'),
-        endDate: new Date('2024-12-31'),
-      },
+      data: { name: `e2e-period-${Date.now()}`, startDate, endDate },
     });
     periodId = period.id;
+    createdPeriodIds.push(period.id);
   });
 
   afterAll(async () => {
     if (createdReportIds.length) {
       await prisma.report.deleteMany({ where: { id: { in: createdReportIds } } });
     }
-    if (periodId) {
-      await prisma.report.deleteMany({ where: { periodId } });
-      await prisma.period.delete({ where: { id: periodId } }).catch(() => {});
+    await prisma.report.deleteMany({ where: { periodId } });
+    if (createdPeriodIds.length) {
+      await prisma.period.deleteMany({ where: { id: { in: createdPeriodIds } } });
     }
     if (createdUserIds.length) {
       await prisma.user.deleteMany({ where: { id: { in: createdUserIds } } });
@@ -185,9 +207,24 @@ describe('Reports (e2e)', () => {
       const ids = res.body.map((r: { id: string }) => r.id);
       expect(ids).toContain(publishedId);
       expect(ids).not.toContain(bizDraftId);
+      expect(ids).not.toContain(otherBizDraftId);
+      expect(ids).not.toContain(adminDraftId);
     });
 
-    it('ADMIN sees published reports and drafts', async () => {
+    it('HR sees only published reports', async () => {
+      const res = await request(app.getHttpServer())
+        .get('/api/reports')
+        .set('Authorization', `Bearer ${hrToken}`)
+        .expect(200);
+
+      const ids = res.body.map((r: { id: string }) => r.id);
+      expect(ids).toContain(publishedId);
+      expect(ids).not.toContain(bizDraftId);
+      expect(ids).not.toContain(otherBizDraftId);
+      expect(ids).not.toContain(adminDraftId);
+    });
+
+    it('ADMIN sees all reports, including every draft', async () => {
       const res = await request(app.getHttpServer())
         .get('/api/reports')
         .set('Authorization', `Bearer ${adminToken}`)
@@ -209,7 +246,7 @@ describe('Reports (e2e)', () => {
       const ids = res.body.map((r: { id: string }) => r.id);
       expect(ids).toContain(publishedId);
       expect(ids).toContain(bizDraftId);
-      expect(ids).not.toContain(otherBizDraftId); // other business's draft hidden
+      expect(ids).not.toContain(otherBizDraftId);
       expect(ids).not.toContain(adminDraftId);
     });
 
@@ -224,6 +261,50 @@ describe('Reports (e2e)', () => {
       const sorted = [...timestamps].sort((a, b) => b - a);
       expect(timestamps).toEqual(sorted);
     });
+
+    // Regression for the bug report: ADMIN creates a draft via the API
+    // (multipart + PDF upload) and it MUST appear in the admin listing.
+    it('ADMIN can create a draft and find it in its own listing', async () => {
+      const p = validPeriod();
+      const created = await request(app.getHttpServer())
+        .post('/api/reports')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .field('title', 'Admin draft via API')
+        .field('published', 'false')
+        .field('period[startDate]', p.startDate)
+        .field('period[endDate]', p.endDate)
+        .attach('file', fakePdf(), 'admin-api.pdf')
+        .expect(201);
+
+      createdReportIds.push(created.body.id);
+      expect(created.body.published).toBe(false);
+
+      const list = await request(app.getHttpServer())
+        .get('/api/reports')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .expect(200);
+
+      expect(list.body).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ id: created.body.id, published: false }),
+        ]),
+      );
+    });
+
+    it('a different ADMIN sees every draft (global admin visibility)', async () => {
+      const otherAdmin = await register('Other Admin', uniqueEmail('admin2'));
+      await promote(otherAdmin.user.id, 'ADMIN');
+
+      const list = await request(app.getHttpServer())
+        .get('/api/reports')
+        .set('Authorization', `Bearer ${otherAdmin.token}`)
+        .expect(200);
+
+      const ids = list.body.map((r: { id: string }) => r.id);
+      expect(ids).toContain(adminDraftId);
+      expect(ids).toContain(bizDraftId);
+      expect(ids).toContain(otherBizDraftId);
+    });
   });
 
   // ══════════════════════════════════════════════════════════════════════════
@@ -232,6 +313,7 @@ describe('Reports (e2e)', () => {
   describe('GET /api/reports/:id', () => {
     let publishedReportId: string;
     let bizDraftId: string;
+    let adminDraftId: string;
 
     beforeAll(async () => {
       const published = await prisma.report.create({
@@ -257,6 +339,18 @@ describe('Reports (e2e)', () => {
       });
       bizDraftId = draft.id;
       createdReportIds.push(draft.id);
+
+      const adminDraft = await prisma.report.create({
+        data: {
+          title: 'Admin draft',
+          fileUrl: 'https://x/admin-draft.pdf',
+          published: false,
+          periodId,
+          authorId: adminId,
+        },
+      });
+      adminDraftId = adminDraft.id;
+      createdReportIds.push(adminDraft.id);
     });
 
     it('returns 200 and the published report anonymously', async () => {
@@ -270,7 +364,13 @@ describe('Reports (e2e)', () => {
     });
 
     it('returns 200 to any authenticated role on a published report', async () => {
-      for (const token of [userToken, businessToken, otherBusinessToken, adminToken]) {
+      for (const token of [
+        userToken,
+        hrToken,
+        businessToken,
+        otherBusinessToken,
+        adminToken,
+      ]) {
         await request(app.getHttpServer())
           .get(`/api/reports/${publishedReportId}`)
           .set('Authorization', `Bearer ${token}`)
@@ -284,6 +384,20 @@ describe('Reports (e2e)', () => {
         .expect(404);
     });
 
+    it('returns 404 for a draft when called by a USER', async () => {
+      await request(app.getHttpServer())
+        .get(`/api/reports/${bizDraftId}`)
+        .set('Authorization', `Bearer ${userToken}`)
+        .expect(404);
+    });
+
+    it('returns 404 for a draft when called by HR', async () => {
+      await request(app.getHttpServer())
+        .get(`/api/reports/${bizDraftId}`)
+        .set('Authorization', `Bearer ${hrToken}`)
+        .expect(404);
+    });
+
     it('returns 404 for a draft when called by a different BUSINESS', async () => {
       await request(app.getHttpServer())
         .get(`/api/reports/${bizDraftId}`)
@@ -291,11 +405,24 @@ describe('Reports (e2e)', () => {
         .expect(404);
     });
 
-    it('returns 200 for a draft when called by ADMIN', async () => {
-      await request(app.getHttpServer())
+    it('returns 200 for a BUSINESS draft when called by ADMIN', async () => {
+      const res = await request(app.getHttpServer())
         .get(`/api/reports/${bizDraftId}`)
         .set('Authorization', `Bearer ${adminToken}`)
         .expect(200);
+
+      expect(res.body.id).toBe(bizDraftId);
+      expect(res.body.published).toBe(false);
+    });
+
+    it('returns 200 for its own draft when called by ADMIN', async () => {
+      const res = await request(app.getHttpServer())
+        .get(`/api/reports/${adminDraftId}`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .expect(200);
+
+      expect(res.body.id).toBe(adminDraftId);
+      expect(res.body.published).toBe(false);
     });
 
     it('returns 200 for a draft when called by its BUSINESS author', async () => {
@@ -323,34 +450,54 @@ describe('Reports (e2e)', () => {
   });
 
   // ══════════════════════════════════════════════════════════════════════════
-  //  POST /reports
+  //  POST /reports — multipart with a required PDF
   // ══════════════════════════════════════════════════════════════════════════
   describe('POST /api/reports', () => {
     it('returns 401 when no token is provided', async () => {
+      const p = validPeriod();
       await request(app.getHttpServer())
         .post('/api/reports')
-        .send({ title: 'X', fileUrl: 'https://x/y.pdf' })
+        .field('title', 'X')
+        .field('period[startDate]', p.startDate)
+        .field('period[endDate]', p.endDate)
+        .attach('file', fakePdf(), 'x.pdf')
         .expect(401);
     });
 
     it('returns 403 when the caller is USER', async () => {
+      const p = validPeriod();
       await request(app.getHttpServer())
         .post('/api/reports')
         .set('Authorization', `Bearer ${userToken}`)
-        .send({ title: 'X', fileUrl: 'https://x/y.pdf' })
+        .field('title', 'X')
+        .field('period[startDate]', p.startDate)
+        .field('period[endDate]', p.endDate)
+        .attach('file', fakePdf(), 'x.pdf')
+        .expect(403);
+    });
+
+    it('returns 403 when the caller is HR', async () => {
+      const p = validPeriod();
+      await request(app.getHttpServer())
+        .post('/api/reports')
+        .set('Authorization', `Bearer ${hrToken}`)
+        .field('title', 'X')
+        .field('period[startDate]', p.startDate)
+        .field('period[endDate]', p.endDate)
+        .attach('file', fakePdf(), 'x.pdf')
         .expect(403);
     });
 
     it('creates a report as ADMIN and sets authorId to the admin', async () => {
+      const p = validPeriod();
       const res = await request(app.getHttpServer())
         .post('/api/reports')
         .set('Authorization', `Bearer ${adminToken}`)
-        .send({
-          title: 'Created by admin',
-          description: 'desc',
-          fileUrl: 'https://cdn.example.com/admin.pdf',
-          periodId,
-        })
+        .field('title', 'Created by admin')
+        .field('description', 'desc')
+        .field('period[startDate]', p.startDate)
+        .field('period[endDate]', p.endDate)
+        .attach('file', fakePdf(), 'admin.pdf')
         .expect(201);
 
       createdReportIds.push(res.body.id);
@@ -358,24 +505,26 @@ describe('Reports (e2e)', () => {
       expect(res.body).toMatchObject({
         title: 'Created by admin',
         description: 'desc',
-        fileUrl: 'https://cdn.example.com/admin.pdf',
         published: false,
-        periodId,
         authorId: adminId,
       });
       expect(res.body.id).toEqual(expect.any(String));
-      expect(res.body.period).toMatchObject({ id: periodId });
+      expect(res.body.fileUrl).toEqual(expect.any(String));
+      expect(res.body.period).toMatchObject({
+        startDate: expect.any(String),
+        endDate: expect.any(String),
+      });
     });
 
     it('creates a report as BUSINESS and sets authorId to the business', async () => {
+      const p = validPeriod();
       const res = await request(app.getHttpServer())
         .post('/api/reports')
         .set('Authorization', `Bearer ${businessToken}`)
-        .send({
-          title: 'Created by business',
-          fileUrl: 'https://x/biz-created.pdf',
-          periodId,
-        })
+        .field('title', 'Created by business')
+        .field('period[startDate]', p.startDate)
+        .field('period[endDate]', p.endDate)
+        .attach('file', fakePdf(), 'biz.pdf')
         .expect(201);
 
       createdReportIds.push(res.body.id);
@@ -383,7 +532,6 @@ describe('Reports (e2e)', () => {
       expect(res.body.authorId).toBe(businessId);
       expect(res.body.published).toBe(false);
 
-      // The business can immediately see its own draft.
       const list = await request(app.getHttpServer())
         .get('/api/reports')
         .set('Authorization', `Bearer ${businessToken}`)
@@ -392,48 +540,58 @@ describe('Reports (e2e)', () => {
     });
 
     it('returns 403 when BUSINESS tries to publish on creation', async () => {
+      const p = validPeriod();
       await request(app.getHttpServer())
         .post('/api/reports')
         .set('Authorization', `Bearer ${businessToken}`)
-        .send({ title: 'X', fileUrl: 'https://x/y.pdf', published: true })
+        .field('title', 'X')
+        .field('published', 'true')
+        .field('period[startDate]', p.startDate)
+        .field('period[endDate]', p.endDate)
+        .attach('file', fakePdf(), 'x.pdf')
         .expect(403);
     });
 
-    it('ignores a client-supplied authorId (whitelist)', async () => {
+    it('rejects a client-supplied authorId (whitelist)', async () => {
+      const p = validPeriod();
       await request(app.getHttpServer())
         .post('/api/reports')
         .set('Authorization', `Bearer ${businessToken}`)
-        .send({
-          title: 'X',
-          fileUrl: 'https://x/y.pdf',
-          authorId: otherBusinessId,
-        })
+        .field('title', 'X')
+        .field('authorId', otherBusinessId)
+        .field('period[startDate]', p.startDate)
+        .field('period[endDate]', p.endDate)
+        .attach('file', fakePdf(), 'x.pdf')
         .expect(400);
     });
 
     it('returns 400 when the body is invalid (missing title)', async () => {
+      const p = validPeriod();
       await request(app.getHttpServer())
         .post('/api/reports')
         .set('Authorization', `Bearer ${adminToken}`)
-        .send({ fileUrl: 'https://x/y.pdf' })
+        .field('period[startDate]', p.startDate)
+        .field('period[endDate]', p.endDate)
+        .attach('file', fakePdf(), 'x.pdf')
         .expect(400);
     });
 
     it('returns 400 when the body has an unknown property (whitelist)', async () => {
+      const p = validPeriod();
       await request(app.getHttpServer())
         .post('/api/reports')
         .set('Authorization', `Bearer ${adminToken}`)
-        .send({
-          title: 'X',
-          fileUrl: 'https://x/y.pdf',
-          malicious: 'nope',
-        })
+        .field('title', 'X')
+        .field('malicious', 'nope')
+        .field('period[startDate]', p.startDate)
+        .field('period[endDate]', p.endDate)
+        .attach('file', fakePdf(), 'x.pdf')
         .expect(400);
     });
   });
 
   // ══════════════════════════════════════════════════════════════════════════
-  //  PATCH /reports/:id
+  //  PATCH /reports/:id — multipart optional PDF
   // ══════════════════════════════════════════════════════════════════════════
   describe('PATCH /api/reports/:id', () => {
     let reportId: string;
@@ -454,7 +612,7 @@ describe('Reports (e2e)', () => {
     it('returns 401 without a token', async () => {
       await request(app.getHttpServer())
         .patch(`/api/reports/${reportId}`)
-        .send({ title: 'Renamed' })
+        .field('title', 'Renamed')
         .expect(401);
     });
 
@@ -462,7 +620,15 @@ describe('Reports (e2e)', () => {
       await request(app.getHttpServer())
         .patch(`/api/reports/${reportId}`)
         .set('Authorization', `Bearer ${userToken}`)
-        .send({ title: 'Renamed' })
+        .field('title', 'Renamed')
+        .expect(403);
+    });
+
+    it('returns 403 as HR', async () => {
+      await request(app.getHttpServer())
+        .patch(`/api/reports/${reportId}`)
+        .set('Authorization', `Bearer ${hrToken}`)
+        .field('title', 'Renamed')
         .expect(403);
     });
 
@@ -470,7 +636,7 @@ describe('Reports (e2e)', () => {
       await request(app.getHttpServer())
         .patch(`/api/reports/${reportId}`)
         .set('Authorization', `Bearer ${businessToken}`)
-        .send({ title: 'Renamed' })
+        .field('title', 'Renamed')
         .expect(403);
     });
 
@@ -478,7 +644,7 @@ describe('Reports (e2e)', () => {
       const res = await request(app.getHttpServer())
         .patch(`/api/reports/${reportId}`)
         .set('Authorization', `Bearer ${adminToken}`)
-        .send({ published: true })
+        .field('published', 'true')
         .expect(200);
 
       expect(res.body.published).toBe(true);
@@ -493,13 +659,10 @@ describe('Reports (e2e)', () => {
       const res = await request(app.getHttpServer())
         .patch(`/api/reports/${reportId}`)
         .set('Authorization', `Bearer ${adminToken}`)
-        .send({ title: 'Renamed' })
+        .field('title', 'Renamed')
         .expect(200);
 
-      expect(res.body).toMatchObject({
-        id: reportId,
-        title: 'Renamed',
-      });
+      expect(res.body).toMatchObject({ id: reportId, title: 'Renamed' });
     });
 
     it('returns 404 for a non-existent id', async () => {
@@ -507,7 +670,7 @@ describe('Reports (e2e)', () => {
       await request(app.getHttpServer())
         .patch(`/api/reports/${missing}`)
         .set('Authorization', `Bearer ${adminToken}`)
-        .send({ title: 'Renamed' })
+        .field('title', 'Renamed')
         .expect(404);
     });
 
@@ -515,7 +678,7 @@ describe('Reports (e2e)', () => {
       await request(app.getHttpServer())
         .patch('/api/reports/not-a-uuid')
         .set('Authorization', `Bearer ${adminToken}`)
-        .send({ title: 'Renamed' })
+        .field('title', 'Renamed')
         .expect(400);
     });
   });
@@ -550,6 +713,18 @@ describe('Reports (e2e)', () => {
         .expect(403);
     });
 
+    it('returns 403 as HR', async () => {
+      const r = await prisma.report.create({
+        data: { title: 'Del', fileUrl: 'https://x/del.pdf', periodId },
+      });
+      createdReportIds.push(r.id);
+
+      await request(app.getHttpServer())
+        .delete(`/api/reports/${r.id}`)
+        .set('Authorization', `Bearer ${hrToken}`)
+        .expect(403);
+    });
+
     it('returns 403 as a BUSINESS', async () => {
       const r = await prisma.report.create({
         data: { title: 'Del', fileUrl: 'https://x/del.pdf', periodId },
@@ -569,7 +744,7 @@ describe('Reports (e2e)', () => {
           fileUrl: 'https://x/del.pdf',
           periodId,
           authorId: businessId,
-          published: true,        // ← must be published
+          published: true,
         },
       });
 
@@ -584,22 +759,43 @@ describe('Reports (e2e)', () => {
       expect(gone).toBeNull();
     });
 
-    it('allows ADMIN to delete a draft submitted by BUSINESS', async () => {
+    it('allows ADMIN to delete a BUSINESS draft', async () => {
       const r = await prisma.report.create({
         data: {
           title: 'Draft',
           fileUrl: 'https://x/d.pdf',
           periodId,
           authorId: businessId,
-          published: false,       // ← draft
+          published: false,
         },
       });
       createdReportIds.push(r.id);
 
-      await request(app.getHttpServer())
+      const res = await request(app.getHttpServer())
         .delete(`/api/reports/${r.id}`)
         .set('Authorization', `Bearer ${adminToken}`)
         .expect(200);
+
+      expect(res.body).toEqual({ success: true, id: r.id });
+    });
+
+    it('allows ADMIN to delete its own draft', async () => {
+      const r = await prisma.report.create({
+        data: {
+          title: 'Admin draft',
+          fileUrl: 'https://x/adm-d.pdf',
+          periodId,
+          authorId: adminId,
+          published: false,
+        },
+      });
+
+      const res = await request(app.getHttpServer())
+        .delete(`/api/reports/${r.id}`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .expect(200);
+
+      expect(res.body).toEqual({ success: true, id: r.id });
     });
 
     it('returns 404 for a non-existent id', async () => {

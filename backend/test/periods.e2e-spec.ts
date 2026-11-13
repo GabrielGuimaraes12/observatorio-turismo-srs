@@ -99,12 +99,10 @@ describe('Periods (e2e)', () => {
   // -------------------------------------------------------------------------
   describe('GET /api/periods/:id', () => {
     it('returns 200 and the period (with indicators & reports arrays)', async () => {
+      const startDate = new Date(Date.UTC(2024, 0, 1) + Math.floor(Math.random() * 1e10));
+      const endDate   = new Date(startDate.getTime() + 365 * 24 * 60 * 60 * 1000);
       const created = await prisma.period.create({
-        data: {
-          name: `2024-${Date.now()}`,
-          startDate: new Date('2024-01-01'),
-          endDate: new Date('2024-12-31'),
-        },
+        data: { name: `2024-${Date.now()}`, startDate, endDate },
       });
       createdPeriodIds.push(created.id);
 
@@ -218,12 +216,10 @@ describe('Periods (e2e)', () => {
     let periodId: string;
 
     beforeEach(async () => {
+      const startDate = new Date(Date.UTC(2024, 0, 1) + Math.floor(Math.random() * 1e10));
+      const endDate   = new Date(startDate.getTime() + 365 * 24 * 60 * 60 * 1000);
       const created = await prisma.period.create({
-        data: {
-          name: `ToUpdate-${Date.now()}`,
-          startDate: new Date('2024-01-01'),
-          endDate: new Date('2024-12-31'),
-        },
+        data: { name: `ToUpdate-${Date.now()}`, startDate, endDate },
       });
       createdPeriodIds.push(created.id);
       periodId = created.id;
@@ -287,12 +283,10 @@ describe('Periods (e2e)', () => {
   // -------------------------------------------------------------------------
   describe('DELETE /api/periods/:id', () => {
     it('returns 401 without a token', async () => {
+      const startDate = new Date(Date.UTC(2024, 0, 1) + Math.floor(Math.random() * 1e10));
+      const endDate   = new Date(startDate.getTime() + 365 * 24 * 60 * 60 * 1000);
       const r = await prisma.period.create({
-        data: {
-          name: `Del-${Date.now()}`,
-          startDate: new Date('2024-01-01'),
-          endDate: new Date('2024-12-31'),
-        },
+        data: { name: `Del-${Date.now()}`, startDate, endDate },
       });
       createdPeriodIds.push(r.id);
 
@@ -305,12 +299,10 @@ describe('Periods (e2e)', () => {
     });
 
     it('returns 403 as a non-admin', async () => {
+      const startDate = new Date(Date.UTC(2024, 0, 1) + Math.floor(Math.random() * 1e10));
+      const endDate   = new Date(startDate.getTime() + 365 * 24 * 60 * 60 * 1000);
       const r = await prisma.period.create({
-        data: {
-          name: `Del-${Date.now()}`,
-          startDate: new Date('2024-01-01'),
-          endDate: new Date('2024-12-31'),
-        },
+        data: { name: `Del-${Date.now()}`, startDate, endDate },
       });
       createdPeriodIds.push(r.id);
 
@@ -321,12 +313,10 @@ describe('Periods (e2e)', () => {
     });
 
     it('deletes as ADMIN and returns { success, id }', async () => {
+      const startDate = new Date(Date.UTC(2024, 0, 1) + Math.floor(Math.random() * 1e10));
+      const endDate   = new Date(startDate.getTime() + 365 * 24 * 60 * 60 * 1000);
       const r = await prisma.period.create({
-        data: {
-          name: `Del-${Date.now()}`,
-          startDate: new Date('2024-01-01'),
-          endDate: new Date('2024-12-31'),
-        },
+        data: { name: `Del-${Date.now()}`, startDate, endDate },
       });
 
       const res = await request(app.getHttpServer())
@@ -341,12 +331,10 @@ describe('Periods (e2e)', () => {
     });
 
     it('returns 409 when period has related indicators/reports (P2003)', async () => {
+      const startDate = new Date(Date.UTC(2024, 0, 1) + Math.floor(Math.random() * 1e10));
+      const endDate   = new Date(startDate.getTime() + 365 * 24 * 60 * 60 * 1000);
       const period = await prisma.period.create({
-        data: {
-          name: `ComDep-${Date.now()}`,
-          startDate: new Date('2024-01-01'),
-          endDate: new Date('2024-12-31'),
-        },
+        data: { name: `ComDep-${Date.now()}`, startDate, endDate },
       });
       const sector = await prisma.sector.create({
         data: { name: `sec-${Date.now()}` },

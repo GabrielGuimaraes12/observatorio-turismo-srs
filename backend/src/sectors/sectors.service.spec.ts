@@ -161,5 +161,37 @@ describe('SectorService', () => {
 
       expect(prisma.sector.delete).not.toHaveBeenCalled();
     });
+
+    it('create re-throws non-P2002 errors unchanged', async () => {
+      const other: any = new Error('db down');
+      other.code = 'P2025';
+      mockPrismaService.sector.create.mockRejectedValue(other);
+    
+      await expect(service.create({ name: 'X' })).rejects.toBe(other);
+      await expect(service.create({ name: 'X' })).rejects.not.toBeInstanceOf(
+        ConflictException,
+      );
+    });
+    
+    it('update re-throws non-P2002 errors unchanged', async () => {
+      mockPrismaService.sector.findUnique.mockResolvedValue({ id: 'uuid-123' });
+      const other: any = new Error('db down');
+      other.code = 'P2025';
+      mockPrismaService.sector.update.mockRejectedValue(other);
+    
+      await expect(service.update('uuid-123', { name: 'X' })).rejects.toBe(other);
+    });
+    
+    it('remove re-throws non-P2003 errors unchanged', async () => {
+      mockPrismaService.sector.findUnique.mockResolvedValue({ id: 'uuid-123' });
+      const other: any = new Error('db down');
+      other.code = 'P2025';
+      mockPrismaService.sector.delete.mockRejectedValue(other);
+    
+      await expect(service.remove('uuid-123')).rejects.toBe(other);
+      await expect(service.remove('uuid-123')).rejects.not.toBeInstanceOf(
+        ConflictException,
+      );
+    });
   });
 });

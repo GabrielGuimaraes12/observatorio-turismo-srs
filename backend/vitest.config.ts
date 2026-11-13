@@ -9,6 +9,11 @@ export default defineConfig({
     coverage: {
       provider: 'v8',
       reporter: ['text', 'html'],
+      exclude: [
+        '**/generated/**',
+        '**/node_modules/**',
+        '**/*.d.ts',
+      ],
     },
   },
 });
