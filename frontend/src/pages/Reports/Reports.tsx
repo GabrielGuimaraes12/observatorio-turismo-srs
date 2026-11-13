@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Header } from '../../components/layout/Header';
 import { Footer } from '../../components/layout/Footer';
-import { getReports } from '../../services/reportService';
+import { getReports, getReportPdfUrl } from '../../services/reportService';
 import { applyReportMetadata } from '../../services/reportMetadataStorage';
 import './Reports.css';
 
@@ -29,6 +29,60 @@ export function Reports() {
 
     return isPublished && matchesPeriod && matchesSector;
 });
+
+  async function handleViewReport(reportId: string) {
+    const newTab = window.open('', '_blank');
+
+    if (!newTab) {
+      setError('Permita a abertura de novas abas para visualizar o relatório.');
+      return;
+    }
+
+    newTab.document.title = 'Carregando relatório...';
+
+    try {
+      const pdfUrl = await getReportPdfUrl(reportId);
+      newTab.opener = null;
+      newTab.location.href = pdfUrl;
+
+      window.setTimeout(() => {
+        URL.revokeObjectURL(pdfUrl);
+      }, 60000);
+    } catch (error) {
+      newTab.close();
+
+      setError(
+        error instanceof Error
+          ? error.message
+          : 'Não foi possível abrir o relatório.'
+      );
+    }
+  }
+
+  async function handleDownloadReport(reportId: string, reportName: string) {
+    try {
+      const pdfUrl = await getReportPdfUrl(reportId);
+
+      const link = document.createElement('a');
+      link.href = pdfUrl;
+      link.download = `${reportName.replace(/[\\/:*?"<>|]/g, '_')}.pdf`;
+
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+
+      window.setTimeout(() => {
+        URL.revokeObjectURL(pdfUrl);
+      }, 60000);
+    } catch (error) {
+      setError(
+        error instanceof Error
+          ? error.message
+          : 'Não foi possível baixar o PDF.'
+      );
+    }
+  }
+
   return (
     <div className="reports-page">
       <Header />
@@ -83,21 +137,21 @@ export function Reports() {
 
                 <p>{report.description}</p>
               </div>
-
+              
               <div className="report-actions">
-                <a 
-                href={report.pdfUrl}
-                target="_blank"
-                rel="noopener noreferrer"
+                <button
+                  type="button"
+                  onClick={() => handleViewReport(report.id)}
                 >
-                    Ver relatório
-                    </a>
-                <a
-                href={report.pdfUrl}
-                download
+                  Ver relatório
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => handleDownloadReport(report.id, report.name)}
                 >
-                    Baixar PDF
-                    </a>
+                  Baixar PDF
+                </button>
               </div>
             </article>
           ))}

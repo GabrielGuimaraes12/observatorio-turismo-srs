@@ -1,0 +1,166 @@
+.report-form {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.report-form h2 {
+    margin: 0 0 12px;
+    color: #263b59;
+}
+
+.report-form label {
+    margin-top: 12px;
+    color: #38384f;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.report-form input,
+.report-form select,
+.report-form textarea {
+    box-sizing: border-box;
+    width: 100%;
+    padding: 11px 13px;
+    border: 1px solid #d9dbea;
+    border-radius: 8px;
+    background: #ffffff;
+    color: #263b59;
+    font: inherit;
+    font-size: 14px;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.report-form input,
+.report-form select {
+    min-height: 44px;
+}
+
+.report-form textarea {
+    min-height: 110px;
+    resize: vertical;
+}
+
+.report-form input:focus,
+.report-form select:focus,
+.report-form textarea:focus {
+    outline: none;
+    border-color: #705bd5;
+    box-shadow: 0 0 0 3px rgba(112, 91, 213, 0.14);
+}
+
+.report-file-section {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 8px;
+}
+
+.current-pdf {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 12px;
+    border: 1px solid #dcd6f3;
+    border-radius: 8px;
+    background: #f7f5fd;
+    color: #514293;
+}
+
+.current-pdf small {
+    color: #77708f;
+}
+
+.pdf-dropzone {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 9px;
+    min-height: 180px;
+    padding: 24px;
+    border: 2px dashed #bcb1e5;
+    border-radius: 12px;
+    background: #faf9fe;
+    color: #554a83;
+    text-align: center;
+    transition: background 0.2s, border-color 0.2s;
+}
+
+.pdf-dropzone.dragging {
+    background: #f1eefd;
+    border-color: #705bd5;
+}
+
+.pdf-dropzone p {
+    margin: 0;
+    font-weight: 600;
+}
+
+.pdf-upload-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    background: #e8e2fa;
+    color: #705bd5;
+    font-size: 24px;
+}
+
+.pdf-dropzone button,
+.selected-pdf button {
+    padding: 9px 15px;
+    border: none;
+    border-radius: 7px;
+    background: #705bd5;
+    color: #ffffff;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.pdf-dropzone button:hover,
+.selected-pdf button:hover {
+    background: #5c49bd;
+}
+
+.pdf-dropzone small {
+    color: #77708f;
+}
+
+.selected-pdf {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 13px;
+    border: 1px solid #dcd6f3;
+    border-radius: 8px;
+    background: #f7f5fd;
+}
+
+.selected-pdf div {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+
+.selected-pdf small {
+    color: #77708f;
+}
+
+.pdf-error {
+    color: #b42318;
+    font-size: 0.9rem;
+}
+
+@media (max-width: 600px) {
+    .selected-pdf {
+        flex-direction: column;
+        align-items: stretch;
+    }
+}

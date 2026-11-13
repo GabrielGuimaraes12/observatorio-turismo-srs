@@ -121,6 +121,7 @@
   color: #666666;
 }
 
+
 /* Botões */
 
 .report-actions {
@@ -129,29 +130,41 @@
   margin-top: 24px;
 }
 
-.report-actions a {
+.report-actions button {
   flex: 1;
   padding: 10px 12px;
   border-radius: 8px;
   text-align: center;
-  text-decoration: none;
+  font-family: inherit;
   font-size: 13px;
   font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s, opacity 0.2s;
 }
 
-.report-actions a:first-child {
+.report-actions button:first-child {
+  border: 1px solid #6c4ab6;
   background: #6c4ab6;
   color: #ffffff;
 }
 
-.report-actions a:last-child {
+.report-actions button:last-child {
   border: 1px solid #6c4ab6;
   color: #6c4ab6;
   background: #ffffff;
 }
 
-.report-actions a:hover {
-  opacity: 0.85;
+.report-actions button:first-child:hover {
+  background: #583a9a;
+}
+
+.report-actions button:last-child:hover {
+  background: #f5f1fa;
+}
+
+.report-actions button:focus-visible {
+  outline: 3px solid #c5b2e8;
+  outline-offset: 2px;
 }
 
 /* Responsividade */
