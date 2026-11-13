@@ -105,6 +105,29 @@ describe('SectorService', () => {
       const result = await service.update('uuid-123', { name: 'New Name' });
       expect(result).toEqual(updatedMock);
     });
+
+    it('deve lançar NotFoundException ao atualizar setor inexistente', async () => {
+      mockPrismaService.sector.findUnique.mockResolvedValue(null);
+
+      await expect(
+        service.update('inexistente', { name: 'Novo nome' }),
+      ).rejects.toThrow(NotFoundException);
+
+      expect(prisma.sector.update).not.toHaveBeenCalled();
+    });
+
+    it('deve lançar ConflictException ao atualizar para um nome duplicado (P2002)', async () => {
+      const existingMock = { id: 'uuid-123', name: 'Hotelaria' };
+      const prismaError: any = new Error('Unique constraint failed');
+      prismaError.code = 'P2002';
+
+      mockPrismaService.sector.findUnique.mockResolvedValue(existingMock);
+      mockPrismaService.sector.update.mockRejectedValue(prismaError);
+
+      await expect(
+        service.update('uuid-123', { name: 'Gastronomia' }),
+      ).rejects.toThrow(ConflictException);
+    });
   });
 
   describe('remove', () => {
@@ -127,6 +150,16 @@ describe('SectorService', () => {
       mockPrismaService.sector.delete.mockRejectedValue(prismaError);
 
       await expect(service.remove('uuid-123')).rejects.toThrow(ConflictException);
+    });
+
+    it('deve lançar NotFoundException ao remover setor inexistente', async () => {
+      mockPrismaService.sector.findUnique.mockResolvedValue(null);
+
+      await expect(
+        service.remove('inexistente'),
+      ).rejects.toThrow(NotFoundException);
+
+      expect(prisma.sector.delete).not.toHaveBeenCalled();
     });
   });
 });

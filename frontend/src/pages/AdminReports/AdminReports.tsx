@@ -3,7 +3,6 @@ import { AdminLayout } from '../../components/admin/AdminLayout';
 import type { Report } from '../../types/report';
 import { ReportForm } from '../../components/admin/ReportForm';
 import { getReports, createReport, updateReport, deleteReport } from '../../services/reportService';
-import { applyReportMetadata, saveReportMetadata } from '../../services/reportMetadataStorage';
 import { AdminSummaryCards } from '../../components/admin/AdminSummaryCards';
 import './AdminReports.css';
 
@@ -26,7 +25,7 @@ export function AdminReports() {
                 const data = await getReports('admin');
 
                 if (isMounted){
-                    setReports(applyReportMetadata(data));
+                    setReports(data);
                 }
             } catch (error) {
                 if(isMounted){
@@ -60,40 +59,52 @@ export function AdminReports() {
 
     async function handleSave(report: Report) {
         try {
-            if (selectedReport) {
-                await updateReport(report.id, {
-                    title: report.name,
-                    description: report.description,
-                    fileUrl: report.pdfUrl,
-                    published: report.published,
-                });
-                saveReportMetadata(report);
+            const reportData = {
+                title: report.name,
+                description: report.description,
+                fileUrl: report.pdfUrl,
+                published: report.published,
+                period: {
+                    startDate: report.periodStartDate,
+                    endDate: report.periodEndDate,
+                },
+                sectorId: report.sectorId,
+            };
 
-                setReports((currentReports) => currentReports.map((currentReport) => 
-                    currentReport.id === report.id ? report : currentReport));
+            if (selectedReport) {
+                const updatedReport = await updateReport(
+                    report.id,
+                    reportData
+                );
+
+                setReports((currentReports) =>
+                    currentReports.map((currentReport) =>
+                        currentReport.id === report.id
+                            ? updatedReport
+                            : currentReport
+                    )
+                );
             } else {
                 const createdReport = await createReport({
-                    title: report.name,
-                    description: report.description,
-                    fileUrl: report.pdfUrl,
+                    ...reportData,
                     published: false,
                 });
 
-                const reportWithMetadata = {
-                    ...createdReport,
-                    period: report.period,
-                    sector: report.sector,
-                };
-                saveReportMetadata(reportWithMetadata);
-                setReports((currentReports) => [reportWithMetadata, ...currentReports]);
+                setReports((currentReports) => [
+                    createdReport,
+                    ...currentReports,
+                ]);
             }
-            
+
             setIsFormOpen(false);
             setSelectedReport(undefined);
-            } catch (error) {
-                window.alert(
-                    error instanceof Error ? error.message : 'Não foi possível salvar o relatório.');
-            }
+        } catch (error) {
+            window.alert(
+                error instanceof Error
+                    ? error.message
+                    : 'Não foi possível salvar o relatório.'
+            );
+        }
     }
 
     function handleCancel(){
@@ -114,11 +125,6 @@ export function AdminReports() {
 
             setReports((currentReports) => currentReports.filter((report) => report.id !== id));
 
-            const metadata = JSON.parse(localStorage.getItem('reportMetadata') ?? '{}');
-
-            delete metadata[id];
-
-            localStorage.setItem('reportMetadata', JSON.stringify(metadata));
         } catch (error) {
             window.alert(
                 error instanceof Error ? error.message : 'Não foi possível excluir o relatório.');
@@ -127,7 +133,7 @@ export function AdminReports() {
     async function handleTogglePublication(report: Report) {
         const newPublishedStatus = !report.published;
 
-        const action = newPublishedStatus ? 'publicar' : 'retirar de publicação';
+        const action = newPublishedStatus ? 'publicar' : 'Remover publicação';
 
         const confirmed = window.confirm(`Deseja realmente ${action} o relatório "${report.name}"?`);
 
@@ -247,7 +253,7 @@ export function AdminReports() {
                                 {updatingPublicationId === report.id
                                     ? 'Atualizando...'
                                     : report.published
-                                        ? 'Retirar de publicação'
+                                        ? 'Remover publicação'
                                         : 'Publicar'}
                             </button>
                             <button

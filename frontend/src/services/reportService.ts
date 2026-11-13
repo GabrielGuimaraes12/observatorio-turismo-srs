@@ -17,20 +17,29 @@ interface ApiReport {
     period?: {
         id: string;
         name?: string;
-        year?: number;
         startDate?: string;
         endDate?: string;
+    } | null;
+    sectorId: string | null;
+    sector?: {
+        id: string;
+        name: string;
+        description?: string | null;
     } | null;
 }
 
 function mapApiReport(report: ApiReport): Report {
-    const periodLabel = report.period?.name ?? (report.period?.year ? String(report.period.year) : '');
+    const periodLabel = report.period?.name ?? '';
 
     return {
         id: report.id,
         name: report.title,
         period: periodLabel,
-        sector: 'Todos',
+        periodId: report.periodId,
+        periodStartDate: report.period?.startDate ?? '',
+        periodEndDate: report.period?.endDate ?? '',
+        sector: report.sector?.name ?? 'Todos',
+        sectorId: report.sectorId,
         description: report.description ?? '',
         pdfUrl: report.fileUrl,
         published: report.published,
@@ -61,6 +70,11 @@ export interface CreateReportRequest {
     description: string;
     fileUrl: string;
     published: boolean;
+        period?: {
+        startDate: string;
+        endDate: string;
+    } | null;
+    sectorId?: string | null;
 }
 
 function getReportToken(): string {
@@ -95,7 +109,7 @@ export async function createReport(report: CreateReportRequest): Promise<Report>
 }
 
 
-export async function updateReport(id: string, report: CreateReportRequest): Promise<void> {
+export async function updateReport(id: string, report: CreateReportRequest): Promise<Report> {
     const token = sessionStorage.getItem('authToken');
 
     if (!token) {
@@ -117,6 +131,8 @@ export async function updateReport(id: string, report: CreateReportRequest): Pro
 
         throw new Error(message || 'Não foi possível atualizar o relatório.');
     }
+
+    return mapApiReport(await response.json() as ApiReport);
 }
 
 

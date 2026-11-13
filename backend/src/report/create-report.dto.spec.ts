@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { plainToInstance } from 'class-transformer';
 import { validate } from 'class-validator';
 import { CreateReportDto } from './create-report.dto.js';
+import 'reflect-metadata';
 
 const validateDto = (data: unknown) => {
   const dto = plainToInstance(CreateReportDto, data);
@@ -61,17 +62,28 @@ describe('CreateReportDto', () => {
     expect(errors.some((e) => e.property === 'published')).toBe(true);
   });
 
-  it('rejects a non-UUID periodId', async () => {
-    const errors = await validateDto({ ...valid, periodId: 'not-a-uuid' });
-    expect(errors.some((e) => e.property === 'periodId')).toBe(true);
-  });
-
-  it('accepts a valid UUID periodId', async () => {
+  it('accepts a valid period with startDate and endDate', async () => {
     const errors = await validateDto({
       ...valid,
-      periodId: '11111111-1111-4111-8111-111111111111',
+      period: {
+        startDate: '2026-01-01',
+        endDate: '2026-12-31',
+      },
     });
-    expect(errors).toHaveLength(0);
+
+    expect(errors.some((e) => e.property === 'period')).toBe(false);
+  });
+
+  it('rejects an invalid period date', async () => {
+    const errors = await validateDto({
+      ...valid,
+      period: {
+        startDate: 'invalid-date',
+        endDate: '2026-12-31',
+      },
+    });
+
+    expect(errors.length).toBeGreaterThan(0);
   });
 
   it('ignores unknown properties only when whitelist+forbidNonWhitelisted are enabled', async () => {

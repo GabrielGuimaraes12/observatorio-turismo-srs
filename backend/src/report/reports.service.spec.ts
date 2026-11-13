@@ -1,11 +1,12 @@
 import { describe, it, expect, beforeEach, vi, Mock } from 'vitest';
-import { NotFoundException } from '@nestjs/common';
+import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { ReportsService } from './reports.service.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 
 describe('ReportsService', () => {
   let service: ReportsService;
   let prisma: {
+    $transaction: Mock;
     report: {
       findMany: Mock;
       findUnique: Mock;
@@ -13,7 +14,7 @@ describe('ReportsService', () => {
       update: Mock;
       delete: Mock;
     };
-    period: { findUnique: Mock };
+    period: { findUnique: Mock, upsert: Mock };
     sector: { findUnique: Mock };
   };
 
@@ -46,6 +47,7 @@ describe('ReportsService', () => {
 
   beforeEach(() => {
     prisma = {
+      $transaction: vi.fn(async (callback) => callback(prisma)),
       report: {
         findMany: vi.fn(),
         findUnique: vi.fn(),
@@ -53,7 +55,7 @@ describe('ReportsService', () => {
         update: vi.fn(),
         delete: vi.fn(),
       },
-      period: { findUnique: vi.fn() },
+      period: { findUnique: vi.fn(), upsert: vi.fn(), },
       sector: { findUnique: vi.fn() },
     };
     service = new ReportsService(prisma as unknown as PrismaService);
@@ -213,7 +215,11 @@ describe('ReportsService', () => {
 
   // ── create ────────────────────────────────────────────────────────────
   describe('create', () => {
-    it('forwards every field plus authorId to Prisma', async () => {
+    it('creates a report and associates an existing period', async () => {
+      const startDate = new Date('2026-01-01T00:00:00.000Z');
+      const endDate = new Date('2026-12-31T00:00:00.000Z');
+
+      prisma.period.upsert.mockResolvedValue(period);
       prisma.report.create.mockResolvedValue(publishedReport);
 
       const dto = {
@@ -221,11 +227,30 @@ describe('ReportsService', () => {
         description: 'desc',
         fileUrl: 'https://x/pub.pdf',
         published: true,
-        periodId: 'period-1',
+        period: {
+          name: 'Período de teste',
+          startDate: startDate.toISOString(),
+          endDate: endDate.toISOString(),
+        },
         sectorId: 'sector-1',
       };
 
       await service.create(dto, author.id);
+
+      expect(prisma.period.upsert).toHaveBeenCalledWith({
+        where: {
+          startDate_endDate: {
+            startDate,
+            endDate,
+          },
+        },
+        update: {},
+        create: {
+          name: expect.any(String),
+          startDate,
+          endDate,
+        },
+      });
 
       expect(prisma.report.create).toHaveBeenCalledWith({
         data: {
@@ -233,10 +258,15 @@ describe('ReportsService', () => {
           description: 'desc',
           fileUrl: 'https://x/pub.pdf',
           published: true,
-          periodId: 'period-1',
+          periodId: period.id,
+          sectorId: 'sector-1',
           authorId: author.id,
         },
-        include: expect.objectContaining({ period: true }),
+        include: expect.objectContaining({
+          period: true,
+          sector: true,
+          author: { select: { id: true, name: true, email: true } },
+        }),
       });
     });
 
@@ -265,6 +295,130 @@ describe('ReportsService', () => {
 
       const call = prisma.report.create.mock.calls[0][0];
       expect(call.data.authorId).toBe('user-xyz');
+    });
+
+    it('generates the period name automatically in Portuguese', async () => {
+      const startDate = new Date('2026-01-01T00:00:00.000Z');
+      const endDate = new Date('2026-12-31T00:00:00.000Z');
+
+      prisma.period.upsert.mockResolvedValue(period);
+      prisma.report.create.mockResolvedValue(publishedReport);
+
+      await service.create(
+        {
+          title: 'Annual',
+          fileUrl: 'https://x/pub.pdf',
+          period: {
+            startDate: startDate.toISOString(),
+            endDate: endDate.toISOString(),
+          },
+        },
+        author.id,
+      );
+
+      expect(prisma.period.upsert).toHaveBeenCalledWith(
+        expect.objectContaining({
+          create: {
+            name: 'janeiro de 2026 a dezembro de 2026',
+            startDate,
+            endDate,
+          },
+        }),
+      );
+    });
+
+    it('reuses an existing period with identical dates', async () => {
+      const startDate = new Date('2026-01-01T00:00:00.000Z');
+      const endDate = new Date('2026-12-31T00:00:00.000Z');
+
+      prisma.period.upsert.mockResolvedValue(period);
+      prisma.report.create.mockResolvedValue(publishedReport);
+
+      await service.create(
+        {
+          title: 'Annual',
+          fileUrl: 'https://x/pub.pdf',
+          period: {
+            startDate: startDate.toISOString(),
+            endDate: endDate.toISOString(),
+          },
+        },
+        author.id,
+      );
+
+      expect(prisma.period.upsert).toHaveBeenCalledWith({
+        where: {
+          startDate_endDate: { startDate, endDate },
+        },
+        update: {},
+        create: {
+          name: 'janeiro de 2026 a dezembro de 2026',
+          startDate,
+          endDate,
+        },
+      });
+
+      expect(prisma.report.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({ periodId: period.id }),
+        }),
+      );
+    });
+
+    it('creates a report without a period', async () => {
+      prisma.report.create.mockResolvedValue({
+        ...publishedReport,
+        periodId: null,
+      });
+
+      await service.create(
+        {
+          title: 'Without period',
+          fileUrl: 'https://x/no-period.pdf',
+        },
+        author.id,
+      );
+
+      expect(prisma.period.upsert).not.toHaveBeenCalled();
+
+      expect(prisma.report.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({ periodId: null }),
+        }),
+      );
+    });
+
+    it('uses a transaction when creating a report', async () => {
+      prisma.report.create.mockResolvedValue(publishedReport);
+
+      await service.create(
+        {
+          title: 'Transactional report',
+          fileUrl: 'https://x/transaction.pdf',
+        },
+        author.id,
+      );
+
+      expect(prisma.$transaction).toHaveBeenCalledTimes(1);
+    });
+
+    it('rejects an invalid period without creating a report', async () => {
+      await expect(
+        service.create(
+          {
+            title: 'Invalid period',
+            fileUrl: 'https://x/invalid.pdf',
+            period: {
+              startDate: '2026-12-31',
+              endDate: '2026-01-01',
+            },
+          },
+          author.id,
+        ),
+      ).rejects.toThrow(BadRequestException);
+
+      expect(prisma.report.create).not.toHaveBeenCalled();
+      expect(prisma.period.upsert).not.toHaveBeenCalled();
     });
   });
 
@@ -313,6 +467,135 @@ describe('ReportsService', () => {
       const call = prisma.report.update.mock.calls[0][0];
       expect(call.data).toEqual({ title: 'Renamed' });
       expect(call.data).not.toHaveProperty('description');
+    });
+
+    it('updates the report with an existing period', async () => {
+      const startDate = new Date('2026-01-01T00:00:00.000Z');
+      const endDate = new Date('2026-12-31T00:00:00.000Z');
+
+      prisma.report.findUnique.mockResolvedValue(publishedReport);
+      prisma.period.upsert.mockResolvedValue(period);
+      prisma.report.update.mockResolvedValue({
+        ...publishedReport,
+        periodId: period.id,
+      });
+
+      await service.update('report-1', {
+        period: {
+          startDate: startDate.toISOString(),
+          endDate: endDate.toISOString(),
+        },
+      });
+
+      expect(prisma.period.upsert).toHaveBeenCalled();
+      expect(prisma.report.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { id: 'report-1' },
+          data: { periodId: period.id },
+        }),
+      );
+    });
+
+    it('uses a transaction when updating a report', async () => {
+      prisma.report.findUnique.mockResolvedValue(publishedReport);
+      prisma.report.update.mockResolvedValue(publishedReport);
+
+      await service.update('report-1', { title: 'Updated' });
+
+      expect(prisma.$transaction).toHaveBeenCalledTimes(1);
+    });
+
+    it('creates a new period when updating with different dates', async () => {
+      const startDate = new Date('2025-01-01T00:00:00.000Z');
+      const endDate = new Date('2025-12-31T00:00:00.000Z');
+      const newPeriod = { id: 'period-2025', name: 'janeiro de 2025 a dezembro de 2025' };
+
+      prisma.report.findUnique.mockResolvedValue(publishedReport);
+      prisma.period.upsert.mockResolvedValue(newPeriod);
+      prisma.report.update.mockResolvedValue({
+        ...publishedReport,
+        periodId: newPeriod.id,
+      });
+
+      await service.update('report-1', {
+        period: {
+          startDate: startDate.toISOString(),
+          endDate: endDate.toISOString(),
+        },
+      });
+
+      expect(prisma.period.upsert).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: {
+            startDate_endDate: { startDate, endDate },
+          },
+          create: {
+            name: 'janeiro de 2025 a dezembro de 2025',
+            startDate,
+            endDate,
+          },
+          update: {},
+        }),
+      );
+
+      expect(prisma.report.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: { periodId: newPeriod.id },
+        }),
+      );
+    });
+
+    it('preserves the current period when period is omitted', async () => {
+      prisma.report.findUnique.mockResolvedValue(publishedReport);
+      prisma.report.update.mockResolvedValue(publishedReport);
+
+      await service.update('report-1', { title: 'Updated' });
+
+      expect(prisma.period.upsert).not.toHaveBeenCalled();
+
+      const updateCall = prisma.report.update.mock.calls[0][0];
+
+      expect(updateCall.data).not.toHaveProperty('periodId');
+    });
+
+    it('does not modify the shared period when updating a report', async () => {
+      prisma.report.findUnique.mockResolvedValue(publishedReport);
+      prisma.period.upsert.mockResolvedValue(period);
+      prisma.report.update.mockResolvedValue(publishedReport);
+
+      await service.update('report-1', {
+        period: {
+          startDate: '2026-01-01T00:00:00.000Z',
+          endDate: '2026-12-31T00:00:00.000Z',
+        },
+      });
+
+      expect(prisma.period.upsert).toHaveBeenCalledWith(
+        expect.objectContaining({
+          update: {},
+        }),
+      );
+      expect(prisma.period.upsert).toHaveBeenCalledWith(
+        expect.objectContaining({
+          update: {},
+        }),
+      );
+    });
+
+    it('rejects an invalid period when updating a report', async () => {
+      prisma.report.findUnique.mockResolvedValue(publishedReport);
+
+      await expect(
+        service.update('report-1', {
+          period: {
+            startDate: '2026-12-31',
+            endDate: '2026-01-01',
+          },
+        }),
+      ).rejects.toThrow(BadRequestException);
+
+      expect(prisma.report.update).not.toHaveBeenCalled();
+      expect(prisma.period.upsert).not.toHaveBeenCalled();
     });
   });
 

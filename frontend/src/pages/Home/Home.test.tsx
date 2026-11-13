@@ -1,4 +1,3 @@
-
 import { render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import {
@@ -40,6 +39,8 @@ const publishedIndicator = {
   period: {
     id: 'period-1',
     name: '2026',
+    startDate: '2026-01-01T00:00:00.000Z',
+    endDate: '2026-12-31T00:00:00.000Z',
   },
 };
 
@@ -55,7 +56,11 @@ const publishedReport = {
   id: 'report-1',
   name: 'Relatório de Turismo 2026',
   period: '2026',
+  periodId: 'period-1',
+  periodStartDate: '2026-01-01T00:00:00.000Z',
+  periodEndDate: '2026-12-31T00:00:00.000Z',
   sector: 'Turismo',
+  sectorId: 'sector-1',
   description: 'Dados do turismo',
   pdfUrl: 'https://example.com/relatorio-2026.pdf',
   published: true,

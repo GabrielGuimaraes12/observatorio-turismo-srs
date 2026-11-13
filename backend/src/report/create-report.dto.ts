@@ -1,11 +1,22 @@
 import {
   IsBoolean,
+  IsDateString,
   IsOptional,
   IsString,
   IsUUID,
   MaxLength,
   MinLength,
+  ValidateNested,
 } from 'class-validator';
+import { Type } from 'class-transformer';
+
+export class ReportPeriodDto {
+  @IsDateString()
+  startDate: string;
+
+  @IsDateString()
+  endDate: string;
+}
 
 export class CreateReportDto {
   @IsString()
@@ -26,6 +37,11 @@ export class CreateReportDto {
   published?: boolean;
 
   @IsOptional()
+  @ValidateNested()
+  @Type(() => ReportPeriodDto)
+  period?: ReportPeriodDto;
+
+  @IsOptional()
   @IsUUID()
-  periodId?: string;
+  sectorId?: string;
 }

@@ -12,10 +12,6 @@ vi.mock('../../services/reportService', () => ({
     getReports: getReportsMock,
 }));
 
-vi.mock('../../services/reportMetadataStorage', () => ({
-    applyReportMetadata: (reports: Report[]) => reports,
-}));
-
 vi.mock('../../components/layout/Header', () => ({
     Header: () => <header>Header</header>,
 }));
@@ -25,28 +21,36 @@ vi.mock('../../components/layout/Footer', () => ({
 }));
 
 const reports: Report[] = [
-  {
-    id: '1',
-    name: 'Relatório de Turismo 2026',
-    period: '2026',
-    sector: 'Turismo',
-    description: 'Dados do turismo em 2026',
-    pdfUrl: '/reports/turismo-2026.pdf',
-    published: true,
-    createdAt: '2026-10-01T10:00:00.000Z',
-    updatedAt: '2026-10-10T10:00:00.000Z',
-  },
-  {
-    id: '2',
-    name: 'Relatório de Hospedagem 2025',
-    period: '2025',
-    sector: 'Hospedagem',
-    description: 'Dados de hospedagem em 2025',
-    pdfUrl: '/reports/hospedagem-2025.pdf',
-    published: true,
-    createdAt: '2026-10-01T10:00:00.000Z',
-    updatedAt: '2026-10-10T10:00:00.000Z',
-  },
+    {
+        id: '1',
+        name: 'Relatório de Turismo 2026',
+        period: '2026',
+        periodId: 'period-2026',
+        periodStartDate: '2026-01-01T00:00:00.000Z',
+        periodEndDate: '2026-12-31T00:00:00.000Z',
+        sector: 'Turismo',
+        sectorId: 'sector-1',
+        description: 'Dados do turismo em 2026',
+        pdfUrl: '/reports/turismo-2026.pdf',
+        published: true,
+        createdAt: '2026-10-01T10:00:00.000Z',
+        updatedAt: '2026-10-10T10:00:00.000Z',
+    },
+    {
+        id: '2',
+        name: 'Relatório de Hospedagem 2025',
+        period: '2025',
+        periodId: 'period-2025',
+        periodStartDate: '2025-01-01T00:00:00.000Z',
+        periodEndDate: '2025-12-31T00:00:00.000Z',
+        sector: 'Hospedagem',
+        sectorId: 'sector-2',
+        description: 'Dados de hospedagem em 2025',
+        pdfUrl: '/reports/hospedagem-2025.pdf',
+        published: true,
+        createdAt: '2026-10-01T10:00:00.000Z',
+        updatedAt: '2026-10-10T10:00:00.000Z',
+    },
 ];
 
 describe('Reports', () => {
@@ -95,7 +99,10 @@ describe('Reports', () => {
 
         await screen.findByText('Relatório de Turismo 2026');
 
-        await user.selectOptions(screen.getAllByRole('combobox')[1], 'Hospedagem');
+        await user.selectOptions(
+            screen.getAllByRole('combobox')[1],
+            'Hospedagem',
+        );
 
         expect(
             screen.getByText('Relatório de Hospedagem 2025'),
@@ -123,19 +130,27 @@ describe('Reports', () => {
         expect(links[1]).toHaveAttribute('href', '/reports/turismo-2026.pdf');
         expect(links[1]).toHaveAttribute('download');
     });
-    
+
     it('não exibe relatórios que não foram publicados', async () => {
+        const unpublishedReport: Report = {
+            id: '3',
+            name: 'Relatório ainda não publicado',
+            period: '2026',
+            periodId: 'period-2026',
+            periodStartDate: '2026-01-01T00:00:00.000Z',
+            periodEndDate: '2026-12-31T00:00:00.000Z',
+            sector: 'Turismo',
+            sectorId: 'sector-1',
+            description: 'Relatório de teste privado',
+            pdfUrl: '/reports/rascunho.pdf',
+            published: false,
+            createdAt: '2026-10-01T10:00:00.000Z',
+            updatedAt: '2026-10-10T10:00:00.000Z',
+        };
+
         getReportsMock.mockResolvedValue([
             ...reports,
-            {
-                id: '3',
-                name: 'Relatório ainda não publicado',
-                period: '2026',
-                sector: 'Turismo',
-                description: 'Relatório de teste privado',
-                pdfUrl: '/reports/rascunho.pdf',
-                published: false,
-            },
+            unpublishedReport,
         ]);
 
         render(<Reports />);

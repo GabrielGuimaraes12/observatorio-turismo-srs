@@ -1,27 +1,28 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
-import { render, screen, waitFor} from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
-import { MemoryRouter } from "react-router-dom";
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { render, screen, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import { MemoryRouter } from 'react-router-dom';
 
-import { AdminReports } from "./AdminReports";
-import type { Report } from "../../types/report";
+import { AdminReports } from './AdminReports';
+import type { Report } from '../../types/report';
 
-const { getReportsMock, updateReportMock, deleteReportMock } = vi.hoisted(() => ({
+const {
+    getReportsMock,
+    createReportMock,
+    updateReportMock,
+    deleteReportMock,
+} = vi.hoisted(() => ({
     getReportsMock: vi.fn(),
+    createReportMock: vi.fn(),
     updateReportMock: vi.fn(),
-    deleteReportMock: vi.fn()
+    deleteReportMock: vi.fn(),
 }));
 
-vi.mock("../../services/reportService", () => ({
+vi.mock('../../services/reportService', () => ({
     getReports: getReportsMock,
-    createReport: vi.fn(),
+    createReport: createReportMock,
     updateReport: updateReportMock,
     deleteReport: deleteReportMock,
-}))
-
-vi.mock("../../services/reportMetadataStorage", () => ({
-    applyReportMetadata: (reports: Report[]) => reports,
-    saveReportMetadata: vi.fn(),
 }));
 
 vi.mock('../../components/admin/ReportForm', () => ({
@@ -34,26 +35,36 @@ vi.mock('../../components/admin/ReportForm', () => ({
         onSave: (report: Report) => void;
         onCancel: () => void;
     }) => (
-    <div>
-      <span>{report?.name}</span>
-      <button
-        type="button"
-        onClick={() => onSave({...report!, name: 'Relatório atualizado',})}
-      >
-        Salvar edição de teste
-      </button>
-      <button type="button" onClick={onCancel}>
-        Cancelar
-      </button>
-    </div>
-  ),
+        <div>
+            <span>{report?.name ?? 'Novo relatório'}</span>
+            <button
+                type="button"
+                onClick={() =>
+                    onSave({
+                        ...(report ?? publishedReport),
+                        id: report?.id ?? 'report-new',
+                        name: 'Relatório atualizado',
+                    })
+                }
+            >
+                Salvar edição de teste
+            </button>
+            <button type="button" onClick={onCancel}>
+                Cancelar
+            </button>
+        </div>
+    ),
 }));
 
 const publishedReport: Report = {
     id: 'report-1',
     name: 'Relatório publicado',
-    period: '2026',
+    period: 'janeiro de 2026 a dezembro de 2026',
+    periodId: 'period-1',
+    periodStartDate: '2026-01-01T00:00:00.000Z',
+    periodEndDate: '2026-12-31T00:00:00.000Z',
     sector: 'Turismo',
+    sectorId: 'sector-1',
     description: 'Relatório de teste',
     pdfUrl: '/reports/relatorio.pdf',
     published: true,
@@ -61,76 +72,90 @@ const publishedReport: Report = {
     updatedAt: '2026-10-10T10:00:00.000Z',
 };
 
+function renderAdminReports() {
+    return render(
+        <MemoryRouter>
+            <AdminReports />
+        </MemoryRouter>,
+    );
+}
+
 describe('AdminReports', () => {
     beforeEach(() => {
-        vi.restoreAllMocks();
-        vi.resetAllMocks();
+        vi.clearAllMocks();
+
         getReportsMock.mockResolvedValue([{ ...publishedReport }]);
-        updateReportMock.mockResolvedValue(undefined);
+        createReportMock.mockResolvedValue({
+            ...publishedReport,
+            id: 'report-new',
+        });
+        updateReportMock.mockImplementation(
+            async (_id, data) => ({
+                ...publishedReport,
+                name: data.title,
+                description: data.description,
+                pdfUrl: data.fileUrl,
+                published: data.published,
+            }),
+        );
         deleteReportMock.mockResolvedValue(undefined);
     });
 
     it('preserva a publicação ao editar um relatório publicado', async () => {
         const user = userEvent.setup();
-        render(
-        <MemoryRouter>
-        <AdminReports />
-        </MemoryRouter>,
-        );
-        
+
+        renderAdminReports();
+
         await screen.findByText('Relatório publicado');
 
-        await user.click(screen.getByRole('button', { name: /editar/i }));
+        await user.click(screen.getByRole('button', { name: 'Editar' }));
+        await user.click(
+            screen.getByRole('button', { name: 'Salvar edição de teste' }),
+        );
 
-        await user.click(screen.getByRole('button', { name: 'Salvar edição de teste' }),);
-
-        await waitFor(() => {expect(updateReportMock).toHaveBeenCalledWith('report-1', {
-            title: 'Relatório atualizado',
-            description: 'Relatório de teste',
-            fileUrl: '/reports/relatorio.pdf',
-            published: true,
+        await waitFor(() => {
+            expect(updateReportMock).toHaveBeenCalledWith('report-1', {
+                title: 'Relatório atualizado',
+                description: 'Relatório de teste',
+                fileUrl: '/reports/relatorio.pdf',
+                published: true,
+                period: {
+                    startDate: '2026-01-01T00:00:00.000Z',
+                    endDate: '2026-12-31T00:00:00.000Z',
+                },
+                sectorId: 'sector-1',
+            });
         });
     });
-  });
-  
+
     it('exclui um relatório após confirmação', async () => {
         const user = userEvent.setup();
-
         vi.spyOn(window, 'confirm').mockReturnValue(true);
 
-        render(
-            <MemoryRouter>
-                <AdminReports />
-            </MemoryRouter>,
-        );
+        renderAdminReports();
 
         await screen.findByText('Relatório publicado');
 
-        await user.click(screen.getByRole('button', { name: /excluir/i }));
+        await user.click(screen.getByRole('button', { name: 'Excluir' }));
 
         await waitFor(() => {
             expect(deleteReportMock).toHaveBeenCalledWith('report-1');
         });
 
-        await waitFor(() => {
-            expect(screen.queryByText('Relatório publicado')).not.toBeInTheDocument();
-        });
+        expect(
+            screen.queryByText('Relatório publicado'),
+        ).not.toBeInTheDocument();
     });
 
     it('não exclui um relatório quando a confirmação é cancelada', async () => {
         const user = userEvent.setup();
-
         vi.spyOn(window, 'confirm').mockReturnValue(false);
 
-        render(
-            <MemoryRouter>
-                <AdminReports />
-            </MemoryRouter>,
-        );
+        renderAdminReports();
 
         await screen.findByText('Relatório publicado');
 
-        await user.click(screen.getByRole('button', { name: /excluir/i }));
+        await user.click(screen.getByRole('button', { name: 'Excluir' }));
 
         expect(deleteReportMock).not.toHaveBeenCalled();
         expect(screen.getByText('Relatório publicado')).toBeInTheDocument();
@@ -141,21 +166,23 @@ describe('AdminReports', () => {
         const alertMock = vi.spyOn(window, 'alert').mockImplementation(() => {});
 
         vi.spyOn(window, 'confirm').mockReturnValue(true);
-        deleteReportMock.mockRejectedValueOnce(new Error('Falha ao excluir relatório'));
-
-        render(
-            <MemoryRouter>
-                <AdminReports />
-            </MemoryRouter>,
+        deleteReportMock.mockRejectedValueOnce(
+            new Error('Falha ao excluir relatório'),
         );
+
+        renderAdminReports();
 
         await screen.findByText('Relatório publicado');
 
-        await user.click(screen.getByRole('button', { name: /excluir/i }));
+        await user.click(screen.getByRole('button', { name: 'Excluir' }));
 
-        await waitFor(() => {expect(alertMock).toHaveBeenCalledWith('Falha ao excluir relatório');});
+        await waitFor(() => {
+            expect(alertMock).toHaveBeenCalledWith(
+                'Falha ao excluir relatório',
+            );
+        });
+
         expect(screen.getByText('Relatório publicado')).toBeInTheDocument();
-        expect(alertMock).toHaveBeenCalledWith('Falha ao excluir relatório');
     });
 
     it('exibe uma mensagem quando falha ao carregar os relatórios', async () => {
@@ -163,11 +190,7 @@ describe('AdminReports', () => {
             new Error('Falha ao carregar relatórios'),
         );
 
-        render(
-            <MemoryRouter>
-                <AdminReports />
-            </MemoryRouter>,
-        );
+        renderAdminReports();
 
         expect(await screen.findByRole('alert')).toHaveTextContent(
             'Falha ao carregar relatórios',
@@ -176,72 +199,67 @@ describe('AdminReports', () => {
 
     it('permite tentar carregar os relatórios novamente', async () => {
         const user = userEvent.setup();
+        const reloadMock = vi.fn();
 
-        getReportsMock
-            .mockRejectedValueOnce(new Error('Falha ao carregar relatórios'))
-            .mockResolvedValueOnce([{ ...publishedReport }]);
+        Object.defineProperty(window, 'location', {
+            configurable: true,
+            value: { ...window.location, reload: reloadMock },
+        });
 
-        render(
-            <MemoryRouter>
-                <AdminReports />
-            </MemoryRouter>,
+        getReportsMock.mockRejectedValueOnce(
+            new Error('Falha ao carregar relatórios'),
         );
+
+        renderAdminReports();
 
         await screen.findByRole('alert');
 
         await user.click(
-            screen.getByRole('button', { name: /tentar novamente/i }),
+            screen.getByRole('button', { name: 'Tentar novamente' }),
         );
 
-        expect(getReportsMock).toHaveBeenCalledTimes(1);
+        expect(reloadMock).toHaveBeenCalledTimes(1);
     });
-        it('publica um relatório não publicado', async () => {
-            const user = userEvent.setup();
 
-            const unpublishedReport = {
-                ...publishedReport,
-                published: false,
-            };
+    it('publica um relatório não publicado', async () => {
+        const user = userEvent.setup();
 
-            getReportsMock.mockResolvedValue([unpublishedReport]);
-            vi.spyOn(window, 'confirm').mockReturnValue(true);
+        getReportsMock.mockResolvedValueOnce([
+            { ...publishedReport, published: false },
+        ]);
 
-            render(
-                <MemoryRouter>
-                    <AdminReports />
-                </MemoryRouter>,
-            );
+        vi.spyOn(window, 'confirm').mockReturnValue(true);
 
-            await screen.findByText('Não publicado');
+        renderAdminReports();
 
-            await user.click(screen.getByRole('button', { name: 'Publicar' }));
+        await screen.findByText('Não publicado');
 
-            await waitFor(() => {
-                expect(updateReportMock).toHaveBeenCalledWith('report-1', {
-                    title: 'Relatório publicado',
-                    description: 'Relatório de teste',
-                    fileUrl: '/reports/relatorio.pdf',
-                    published: true,
-                });
+        await user.click(screen.getByRole('button', { name: 'Publicar' }));
+
+        await waitFor(() => {
+            expect(updateReportMock).toHaveBeenCalledWith('report-1', {
+                title: 'Relatório publicado',
+                description: 'Relatório de teste',
+                fileUrl: '/reports/relatorio.pdf',
+                published: true,
             });
-
-            expect(await screen.findByText('Publicado')).toBeInTheDocument();
         });
 
-    it('retira um relatório de publicação', async () => {
+        expect(await screen.findByText('Publicado')).toBeInTheDocument();
+    });
+
+    it('remove um relatório de publicação', async () => {
         const user = userEvent.setup();
 
         vi.spyOn(window, 'confirm').mockReturnValue(true);
 
-        render(
-            <MemoryRouter>
-                <AdminReports />
-            </MemoryRouter>,
-        );
+        renderAdminReports();
 
         await screen.findByText('Publicado');
 
-        await user.click(screen.getByRole('button', { name: 'Retirar de publicação' }),);
+        await user.click(
+            screen.getByRole('button', { name: 'Remover publicação' }),
+        );
 
         await waitFor(() => {
             expect(updateReportMock).toHaveBeenCalledWith('report-1', {
@@ -257,18 +275,15 @@ describe('AdminReports', () => {
 
     it('não altera a publicação quando a confirmação é cancelada', async () => {
         const user = userEvent.setup();
-
         const confirmMock = vi.spyOn(window, 'confirm').mockReturnValue(false);
 
-        render(
-            <MemoryRouter>
-                <AdminReports />
-            </MemoryRouter>,
-        );
+        renderAdminReports();
 
         await screen.findByText('Publicado');
 
-        await user.click(screen.getByRole('button', { name: 'Retirar de publicação' }),);
+        await user.click(
+            screen.getByRole('button', { name: 'Remover publicação' }),
+        );
 
         expect(confirmMock).toHaveBeenCalled();
         expect(updateReportMock).not.toHaveBeenCalled();
@@ -280,18 +295,17 @@ describe('AdminReports', () => {
         const alertMock = vi.spyOn(window, 'alert').mockImplementation(() => {});
 
         vi.spyOn(window, 'confirm').mockReturnValue(true);
-
-        updateReportMock.mockRejectedValueOnce(new Error('Falha ao atualizar publicação'),);
-
-        render(
-            <MemoryRouter>
-                <AdminReports />
-            </MemoryRouter>,
+        updateReportMock.mockRejectedValueOnce(
+            new Error('Falha ao atualizar publicação'),
         );
+
+        renderAdminReports();
 
         await screen.findByText('Publicado');
 
-        await user.click(screen.getByRole('button', { name: 'Retirar de publicação' }),);
+        await user.click(
+            screen.getByRole('button', { name: 'Remover publicação' }),
+        );
 
         await waitFor(() => {
             expect(alertMock).toHaveBeenCalledWith(

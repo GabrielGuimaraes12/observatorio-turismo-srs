@@ -1,0 +1,188 @@
+.admin-sectors-page {
+    min-height: 100%;
+    color: #263b59;
+}
+
+.admin-sectors-header {
+    margin-bottom: 32px;
+}
+
+.admin-sectors-header h1 {
+    margin: 0 0 8px;
+    font-size: 32px;
+    color: #222222;
+}
+
+.admin-sectors-header p {
+    margin: 0;
+    color: #666666;
+    font-size: 15px;
+}
+
+.admin-sectors-content {
+    display: grid;
+    grid-template-columns: minmax(280px, 0.8fr) minmax(0, 1.5fr);
+    gap: 24px;
+    align-items: start;
+}
+
+.admin-sector-form,
+.admin-sectors-list {
+    padding: 28px;
+    border: 1px solid #e8e9f0;
+    border-radius: 14px;
+    background: #ffffff;
+    box-shadow: 0 4px 18px rgba(30, 40, 80, 0.04);
+}
+
+.admin-sector-form {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.admin-sector-form h2,
+.admin-sectors-list h2 {
+    margin: 0 0 16px;
+    font-size: 20px;
+    color: #263b59;
+}
+
+.admin-sector-form label {
+    margin-top: 8px;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.admin-sector-form input,
+.admin-sector-form textarea {
+    box-sizing: border-box;
+    width: 100%;
+    padding: 11px 13px;
+    border: 1px solid #d9dbea;
+    border-radius: 8px;
+    background: #ffffff;
+    color: #222238;
+    font: inherit;
+    font-size: 14px;
+}
+
+.admin-sector-form textarea {
+    resize: vertical;
+}
+
+.admin-sector-form input:focus,
+.admin-sector-form textarea:focus {
+    outline: none;
+    border-color: #315b70;
+    box-shadow: 0 0 0 3px rgba(49, 91, 112, 0.12);
+}
+
+.admin-sector-form-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 16px;
+}
+
+.admin-sector-form-actions button {
+    padding: 11px 16px;
+    border: 1px solid #d9dbea;
+    border-radius: 8px;
+    background: #ffffff;
+    color: #315b70;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.admin-sector-form-actions button[type="submit"] {
+    border: none;
+    background: linear-gradient(135deg, #354db5 0%, #a64fd1 100%);
+    color: #ffffff;
+    font-weight: 600;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.admin-sector-form-actions button[type="submit"]:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(100, 75, 190, 0.25);
+}
+
+.admin-sector-form-actions button[type="submit"]:active:not(:disabled) {
+    transform: translateY(0);
+}
+
+.admin-sector-form-actions button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.admin-sectors-table-wrapper {
+    width: 100%;
+    overflow-x: auto;
+}
+
+.admin-sectors-table {
+    width: 100%;
+    border-collapse: collapse;
+    text-align: left;
+}
+
+.admin-sectors-table th,
+.admin-sectors-table td {
+    padding: 14px;
+    border-bottom: 1px solid #eeeeF4;
+    font-size: 14px;
+}
+
+.admin-sectors-table th {
+    background: #f8f8fc;
+    color: #55556a;
+    font-weight: 600;
+}
+
+.admin-sector-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.admin-sector-actions button {
+    padding: 7px 11px;
+    border: 1px solid #cbdce5;
+    border-radius: 6px;
+    background: #ffffff;
+    color: #315b70;
+    cursor: pointer;
+}
+
+.admin-sector-actions .delete-sector-button {
+    border-color: #f1caca;
+    color: #c62828;
+}
+
+.admin-sectors-error {
+    margin-bottom: 20px;
+    padding: 12px 16px;
+    border: 1px solid #f1caca;
+    border-radius: 8px;
+    background: #fff1f1;
+    color: #c62828;
+}
+
+@media (max-width: 900px) {
+    .admin-sectors-content {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 600px) {
+    .admin-sectors-header h1 {
+        font-size: 26px;
+    }
+
+    .admin-sector-form,
+    .admin-sectors-list {
+        padding: 20px 16px;
+    }
+}

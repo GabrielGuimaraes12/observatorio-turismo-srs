@@ -8,7 +8,11 @@ const mockReports: Report[] = [
         id: '1',
         name: 'Relatório 1',
         period: '2026',
+        periodId: 'period-1',
+        periodStartDate: '2026-01-01T00:00:00.000Z',
+        periodEndDate: '2026-12-31T00:00:00.000Z',
         sector: 'Hotelaria',
+        sectorId: 'sector-1',
         description: 'Descrição 1',
         pdfUrl: '#',
         published: true,
@@ -19,7 +23,11 @@ const mockReports: Report[] = [
         id: '2',
         name: 'Relatório 2',
         period: '2026',
+        periodId: 'period-1',
+        periodStartDate: '2026-01-01T00:00:00.000Z',
+        periodEndDate: '2026-12-31T00:00:00.000Z',
         sector: 'Alimentação',
+        sectorId: 'sector-2',
         description: 'Descrição 2',
         pdfUrl: '#',
         published: true,
@@ -30,7 +38,11 @@ const mockReports: Report[] = [
         id: '3',
         name: 'Relatório 3',
         period: '2026',
+        periodId: 'period-1',
+        periodStartDate: '2026-01-01T00:00:00.000Z',
+        periodEndDate: '2026-12-31T00:00:00.000Z',
         sector: 'Transporte',
+        sectorId: 'sector-3',
         description: 'Descrição 3',
         pdfUrl: '#',
         published: false,
@@ -59,13 +71,14 @@ describe('AdminSummaryCards', () => {
         expect(screen.getByText('1')).toBeInTheDocument();
         expect(screen.getByText('15/10/2026')).toBeInTheDocument();
     });
+
     it('exibe uma mensagem enquanto os indicadores estão carregando', () => {
         render(
-        <AdminSummaryCards
-            reports={[]}
-            isLoading={true}
-            hasError={false}
-        />
+            <AdminSummaryCards
+                reports={[]}
+                isLoading={true}
+                hasError={false}
+            />
         );
 
         expect(screen.getByText('Carregando indicadores...')).toBeInTheDocument();
@@ -73,15 +86,16 @@ describe('AdminSummaryCards', () => {
 
     it('exibe uma mensagem quando ocorre um erro ao carregar os indicadores', () => {
         render(
-        <AdminSummaryCards
-            reports={[]}
-            isLoading={false}
-            hasError={true}
-        />
+            <AdminSummaryCards
+                reports={[]}
+                isLoading={false}
+                hasError={true}
+            />
         );
 
         expect(screen.getByText('Os indicadores não estão disponíveis.')).toBeInTheDocument();
     });
+
     it('exibe zero nos indicadores quando não existem relatórios', () => {
         render(
             <AdminSummaryCards

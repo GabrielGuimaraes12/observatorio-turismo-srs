@@ -7,7 +7,18 @@ import {
   IsUUID,
   MaxLength,
   Min,
+  IsDateString,
+  ValidateNested,
 } from 'class-validator';
+import { Type } from 'class-transformer';
+
+export class IndicatorPeriodDto {
+  @IsDateString()
+  startDate: string;
+
+  @IsDateString()
+  endDate: string;
+}
 
 export class CreateIndicatorDto {
   @IsString()
@@ -38,7 +49,7 @@ export class CreateIndicatorDto {
   @IsNotEmpty()
   sectorId: string;
 
-  @IsUUID('4')
-  @IsNotEmpty()
-  periodId: string;
+  @ValidateNested()
+  @Type(() => IndicatorPeriodDto)
+  period: IndicatorPeriodDto;
 }
