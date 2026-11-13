@@ -1,15 +1,17 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { render, screen, within } from '@testing-library/react';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { render, screen, within, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { Reports } from './Reports';
 import type { Report } from '../../types/report';
 
-const { getReportsMock } = vi.hoisted(() => ({
-    getReportsMock: vi.fn()
+const { getReportsMock, getReportPdfUrlMock } = vi.hoisted(() => ({
+    getReportsMock: vi.fn(),
+    getReportPdfUrlMock: vi.fn(),
 }));
 
 vi.mock('../../services/reportService', () => ({
     getReports: getReportsMock,
+    getReportPdfUrl: getReportPdfUrlMock,
 }));
 
 vi.mock('../../components/layout/Header', () => ({
@@ -57,6 +59,11 @@ describe('Reports', () => {
     beforeEach(() => {
         vi.clearAllMocks();
         getReportsMock.mockResolvedValue(reports);
+        getReportPdfUrlMock.mockResolvedValue('blob:http://localhost/test-pdf');
+    });
+
+    afterEach(() => {
+        vi.restoreAllMocks();
     });
 
     it('exibe os relatórios carregados pela API', async () => {
@@ -113,7 +120,20 @@ describe('Reports', () => {
         ).not.toBeInTheDocument();
     });
 
-    it('exibe os links para visualizar e baixar o PDF', async () => {
+    it('abre o PDF em uma nova aba ao clicar em Ver relatório', async () => {
+        const user = userEvent.setup();
+
+        const newTab = {
+            document: { title: '' },
+            opener: window,
+            location: { href: '' },
+            close: vi.fn(),
+        };
+
+        const openSpy = vi
+            .spyOn(window, 'open')
+            .mockReturnValue(newTab as unknown as Window);
+
         render(<Reports />);
 
         const reportTitle = await screen.findByText('Relatório de Turismo 2026');
@@ -121,14 +141,61 @@ describe('Reports', () => {
 
         expect(card).not.toBeNull();
 
-        const links = within(card as HTMLElement).getAllByRole('link');
+        await user.click(
+            within(card as HTMLElement).getByRole('button', {
+                name: 'Ver relatório',
+            }),
+        );
 
-        expect(links[0]).toHaveAttribute('href', '/reports/turismo-2026.pdf');
-        expect(links[0]).toHaveAttribute('target', '_blank');
-        expect(links[0]).toHaveAttribute('rel', 'noopener noreferrer');
+        await waitFor(() => {
+            expect(getReportPdfUrlMock).toHaveBeenCalledWith('1');
+            expect(newTab.location.href).toBe('blob:http://localhost/test-pdf');
+        });
 
-        expect(links[1]).toHaveAttribute('href', '/reports/turismo-2026.pdf');
-        expect(links[1]).toHaveAttribute('download');
+        expect(openSpy).toHaveBeenCalledWith('', '_blank');
+        expect(newTab.document.title).toBe('Carregando relatório...');
+        expect(newTab.opener).toBeNull();
+    });
+
+    
+    it('baixa o PDF ao clicar em Baixar PDF', async () => {
+        const user = userEvent.setup();
+
+        const clickSpy = vi
+            .spyOn(HTMLAnchorElement.prototype, 'click')
+            .mockImplementation(() => {});
+
+        const appendSpy = vi.spyOn(document.body, 'appendChild');
+
+        render(<Reports />);
+
+        const reportTitle = await screen.findByText('Relatório de Turismo 2026');
+        const card = reportTitle.closest('article');
+
+        expect(card).not.toBeNull();
+
+        await user.click(
+            within(card as HTMLElement).getByRole('button', {
+                name: 'Baixar PDF',
+            }),
+        );
+
+        await waitFor(() => {
+            expect(getReportPdfUrlMock).toHaveBeenCalledWith('1');
+            expect(clickSpy).toHaveBeenCalledOnce();
+        });
+
+        const downloadLink = appendSpy.mock.calls
+            .map(([element]) => element)
+            .find(
+                (element): element is HTMLAnchorElement =>
+                    element instanceof HTMLAnchorElement,
+            );
+
+        expect(downloadLink).toBeDefined();
+        expect(downloadLink?.href).toBe('blob:http://localhost/test-pdf');
+        expect(downloadLink?.download).toBe('Relatório de Turismo 2026.pdf');
+        expect(downloadLink?.isConnected).toBe(false);
     });
 
     it('não exibe relatórios que não foram publicados', async () => {

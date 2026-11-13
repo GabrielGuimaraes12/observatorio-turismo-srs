@@ -32,7 +32,7 @@ vi.mock('../../components/admin/ReportForm', () => ({
         onCancel,
     }: {
         report?: Report;
-        onSave: (report: Report) => void;
+        onSave: (report: Report, file: File | null) => void;
         onCancel: () => void;
     }) => (
         <div>
@@ -44,7 +44,7 @@ vi.mock('../../components/admin/ReportForm', () => ({
                         ...(report ?? publishedReport),
                         id: report?.id ?? 'report-new',
                         name: 'Relatório atualizado',
-                    })
+                    }, null)
                 }
             >
                 Salvar edição de teste
@@ -85,19 +85,19 @@ describe('AdminReports', () => {
         vi.clearAllMocks();
 
         getReportsMock.mockResolvedValue([{ ...publishedReport }]);
+
         createReportMock.mockResolvedValue({
             ...publishedReport,
             id: 'report-new',
         });
-        updateReportMock.mockImplementation(
-            async (_id, data) => ({
-                ...publishedReport,
-                name: data.title,
-                description: data.description,
-                pdfUrl: data.fileUrl,
-                published: data.published,
-            }),
-        );
+
+        updateReportMock.mockImplementation(async (_id, data) => ({
+            ...publishedReport,
+            name: data.title,
+            description: data.description,
+            published: data.published,
+        }));
+
         deleteReportMock.mockResolvedValue(undefined);
     });
 
@@ -117,14 +117,13 @@ describe('AdminReports', () => {
             expect(updateReportMock).toHaveBeenCalledWith('report-1', {
                 title: 'Relatório atualizado',
                 description: 'Relatório de teste',
-                fileUrl: '/reports/relatorio.pdf',
                 published: true,
                 period: {
                     startDate: '2026-01-01T00:00:00.000Z',
                     endDate: '2026-12-31T00:00:00.000Z',
                 },
                 sectorId: 'sector-1',
-            });
+            }, null);
         });
     });
 
@@ -240,7 +239,6 @@ describe('AdminReports', () => {
             expect(updateReportMock).toHaveBeenCalledWith('report-1', {
                 title: 'Relatório publicado',
                 description: 'Relatório de teste',
-                fileUrl: '/reports/relatorio.pdf',
                 published: true,
             });
         });
@@ -265,7 +263,6 @@ describe('AdminReports', () => {
             expect(updateReportMock).toHaveBeenCalledWith('report-1', {
                 title: 'Relatório publicado',
                 description: 'Relatório de teste',
-                fileUrl: '/reports/relatorio.pdf',
                 published: false,
             });
         });
