@@ -1,4 +1,4 @@
-import { type FormEvent, useCallback, useEffect, useState } from 'react';
+import { type FormEvent, useCallback, useEffect, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 
 import {
@@ -71,6 +71,33 @@ export function HRDashboard({
   const [selectedRole, setSelectedRole] = useState<UserRole>(
     isHR ? 'HR' : 'BUSINESS',
   );
+  const roleTabsRef = useRef<HTMLDivElement>(null);
+const [indicatorStyle, setIndicatorStyle] = useState({
+  width: 0,
+  left: 0,
+});
+
+useEffect(() => {
+  function updateIndicator() {
+    const container = roleTabsRef.current;
+    const activeButton = container?.querySelector<HTMLButtonElement>('.active');
+
+    if (!container || !activeButton) return;
+
+    const containerRect = container.getBoundingClientRect();
+    const buttonRect = activeButton.getBoundingClientRect();
+
+    setIndicatorStyle({
+      width: buttonRect.width,
+      left: buttonRect.left - containerRect.left,
+    });
+  }
+
+  updateIndicator();
+  window.addEventListener('resize', updateIndicator);
+
+  return () => window.removeEventListener('resize', updateIndicator);
+}, [selectedRole, availableRoles]);
   const [users, setUsers] = useState<ManagementUser[]>([]);
   const [usersLoading, setUsersLoading] = useState(true);
   const [usersError, setUsersError] = useState('');
@@ -244,30 +271,19 @@ export function HRDashboard({
 
   return (
     <div className="hr-dashboard">
-      <header className="hr-header">
-        <div>
-          <p className="hr-eyebrow">OBSERVATÓRIO DO TURISMO</p>
-          <h1>{isHR ? 'Dashboard RH' : 'Dashboard ADMIN'}</h1>
-          <p>Gerenciamento de convites e contas da plataforma.</p>
-        </div>
+      {isHR && (
+        <header className="hr-header">
+          <div>
+            <p className="hr-eyebrow">OBSERVATÓRIO DO TURISMO</p>
+            <h1>Dashboard RH</h1>
+            <p>Gerenciamento de convites e contas da plataforma.</p>
+          </div>
 
-        <div style={{ display: 'flex', gap: '20px', alignItems: 'center', flexWrap: 'wrap' }}>
-        {!isHR && (
-          <>
-            <Link to="/admin/relatorios" className="hr-home-link">
-              Gerenciar relatórios
-            </Link>
-            <Link to="/admin/indicadores" className="hr-home-link">
-              Gerenciar indicadores
-            </Link>
-          </>
-        )}
-
-        <Link to="/" className="hr-home-link">
-        Voltar ao início
-        </Link>
-    </div>
-      </header>
+          <Link to="/" className="hr-home-link">
+            Voltar ao início
+          </Link>
+        </header>
+      )}
 
       <main className="hr-main">
         <nav className="hr-tabs" aria-label={isHR ? 'Áreas do RH' : 'Áreas do ADMIN'}>
@@ -302,8 +318,8 @@ export function HRDashboard({
 
             <p>
               {isHR
-                ? 'O RH pode convidar usuários dos perfis HR e ADMIN.'
-                : 'O ADMIN pode convidar somente usuários BUSINESS.'}
+                ? 'O RH pode convidar usuários dos perfis RH e Administrador.'
+                : 'Administradores podem convidar somente usuários Estabelecimentos.'}
               {' '}O token será exibido apenas uma vez.
             </p>
 
@@ -340,7 +356,7 @@ export function HRDashboard({
                 ) : (
                   <>
                     <span>Perfil do convite</span>
-                    <strong>BUSINESS</strong>
+                    <strong>Estabelecimentos</strong>
                   </>
                 )}
               </div>
@@ -413,17 +429,36 @@ export function HRDashboard({
             <h2>Gerenciar usuários</h2>
             <p>Consulte e gerencie as contas cadastradas.</p>
 
-            <div className="hr-role-tabs">
-              {availableRoles.map((role) => (
-                <button
-                  type="button"
-                  key={role}
-                  className={selectedRole === role ? 'active' : ''}
-                  onClick={() => changeRole(role)}
-                >
-                  {role}
-                </button>
-              ))}
+            <div className="hr-role-tabs" ref={roleTabsRef}>
+              <span
+                className="hr-role-tabs-indicator"
+                style={{
+                  width: `${indicatorStyle.width}px`,
+                  transform: `translateX(${indicatorStyle.left}px)`,
+                }}
+                aria-hidden="true"
+              />
+
+              {availableRoles.map((role) => {
+                const roleLabels: Record<UserRole, string> = {
+                  HR: 'Recursos Humanos',
+                  ADMIN: 'Administradores',
+                  BUSINESS: 'Estabelecimentos',
+                  USER: 'Usuários',
+                };
+
+                return (
+                  <button
+                    type="button"
+                    key={role}
+                    className={selectedRole === role ? 'active' : ''}
+                    onClick={() => changeRole(role)}
+                    aria-pressed={selectedRole === role}
+                  >
+                    {roleLabels[role]}
+                  </button>
+                );
+              })}
             </div>
 
             {usersError && (
@@ -437,7 +472,23 @@ export function HRDashboard({
             {usersLoading ? (
               <p role="status">Carregando usuários...</p>
             ) : users.length === 0 ? (
-              <p>Nenhum {selectedRole} cadastrado.</p>
+                <div className="admin-empty-state">
+                  <div className="admin-empty-state-icon" aria-hidden="true">
+                    <span>♙</span>
+                  </div>
+
+                  <h3>
+                    {selectedRole === 'BUSINESS'
+                      ? 'Nenhum estabelecimento cadastrado'
+                      : 'Nenhum usuário cadastrado'}
+                  </h3>
+
+                  <p>
+                    {selectedRole === 'BUSINESS'
+                      ? 'Ainda não existem contas de estabelecimentos cadastradas na plataforma.'
+                      : 'Não existem contas cadastradas para este perfil no momento.'}
+                  </p>
+                </div>
             ) : (
               <div className="hr-table-wrapper">
                 <table className="hr-table">
@@ -491,18 +542,27 @@ export function HRDashboard({
           </section>
         )}
 
-        {activeTab === 'logs' && (
-          <section className="hr-panel">
-            <h2>Logs de contas</h2>
+       {activeTab === 'logs' && (
+        <section className="hr-panel">
+          <h2>Histórico de atividades</h2>
+
+          <div className="admin-empty-state">
+            <div className="admin-empty-state-icon" aria-hidden="true">
+              <span>◷</span>
+            </div>
+
+            <h3>Consulta de logs em desenvolvimento</h3>
+
             <p role="status">
-              Logs ainda não disponíveis.
+              O histórico de atividades administrativas ainda não está disponível.
             </p>
-            <p>
-              A visualização será integrada quando o backend
-              disponibilizar o endpoint de consulta dos logs.
-            </p>
-          </section>
-        )}
+
+            <span className="admin-status-badge">
+              Em desenvolvimento
+            </span>
+          </div>
+        </section>
+      )}
       </main>
 
       {createdInvitation && (

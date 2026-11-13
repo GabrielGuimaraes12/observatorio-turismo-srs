@@ -1,4 +1,3 @@
-
 import {
   fireEvent,
   render,
@@ -231,7 +230,7 @@ describe('HRDashboard', () => {
     );
 
     fireEvent.click(
-      screen.getByRole('button', { name: 'ADMIN' }),
+      screen.getByRole('button', { name: 'Administradores' }),
     );
 
     expect(
@@ -340,7 +339,7 @@ describe('HRDashboard', () => {
     );
 
     expect(
-      screen.getByText('Logs ainda não disponíveis.'),
+      screen.getByText('O histórico de atividades administrativas ainda não está disponível.',),
     ).toBeInTheDocument();
   });
 

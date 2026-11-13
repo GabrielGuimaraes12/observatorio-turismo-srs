@@ -38,7 +38,7 @@ describe('Gerenciamento de indicadores', () => {
     vi.spyOn(window, 'confirm').mockReturnValue(true);
 
     render(<App />);
-    fireEvent.click(await screen.findByRole('button', { name: 'Novo indicador' }));
+    fireEvent.click(await screen.findByRole('button', { name: '+ Novo indicador' }));
     fireEvent.change(screen.getByLabelText('Nome'), { target: { value: 'Ocupação' } });
     fireEvent.change(screen.getByLabelText('Valor'), { target: { value: '48' } });
     fireEvent.change(screen.getByLabelText('Setor'), { target: { value: 's1' } });

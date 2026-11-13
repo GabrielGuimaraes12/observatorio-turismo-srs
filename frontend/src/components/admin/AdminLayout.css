@@ -1,0 +1,217 @@
+:root {
+  --color-primary-blue: #0A4AAD;
+  --color-primary-purple: #6C5CE0;
+  --color-primary-pink: #C750D6;
+
+  --color-cyan: #5FE6E0;
+  --color-sky-blue: #27B7FD;
+  --color-lilac: #B986ED;
+  --color-light-lilac: #F3B8F7;
+  --color-yellow: #FADA77;
+
+  --gradient-primary: linear-gradient(
+    110deg,
+    var(--color-primary-blue),
+    var(--color-primary-purple),
+    var(--color-primary-pink)
+  );
+
+  --color-sidebar: #6C5CE0;
+  --color-background: #F7F8FC;
+  --color-surface: #FFFFFF;
+  --color-text: #263B59;
+}
+
+.admin-layout {
+  display: flex;
+  min-height: 100vh;
+  background: #f7f8fc;
+  color: #263b59;
+}
+
+.admin-sidebar {
+  position: fixed;
+  inset: 0 auto 0 0;
+  z-index: 100;
+  display: flex;
+  width: 250px;
+  flex-direction: column;
+  padding: 28px 20px;
+  background: var(--color-sidebar);
+  box-sizing: border-box;
+}
+
+.admin-sidebar-brand {
+  display: flex;
+  justify-content: center;
+  padding: 12px 4px 28px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.admin-sidebar-brand img {
+  display: block;
+  width: 100%;
+  max-width: 190px;
+  height: auto;
+  object-fit: contain;
+}
+
+.admin-sidebar-navigation {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 32px;
+}
+
+.admin-sidebar-navigation a,
+.admin-sidebar-logout {
+  display: block;
+  padding: 13px 16px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: #ffffff;
+  font: inherit;
+  font-size: 15px;
+  font-weight: 600;
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.admin-sidebar-navigation a:hover,
+.admin-sidebar-navigation a.active {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.admin-sidebar-logout {
+  margin-top: auto;
+  background: rgba(255, 255, 255, 0.16);
+}
+
+.admin-sidebar-logout:hover {
+  background: rgba(255, 255, 255, 0.25);
+}
+
+.admin-layout-content {
+  box-sizing: border-box;
+  width: calc(100% - 250px);
+  min-height: 100vh;
+  margin-left: 250px;
+  padding: 40px;
+}
+
+@media (max-width: 900px) {
+  .admin-sidebar {
+    width: 210px;
+    padding: 24px 14px;
+  }
+
+  .admin-layout-content {
+    width: calc(100% - 210px);
+    margin-left: 210px;
+    padding: 28px 20px;
+  }
+}
+
+@media (max-width: 600px) {
+  .admin-layout {
+    flex-direction: column;
+  }
+
+  .admin-sidebar {
+    position: relative;
+    width: 100%;
+    min-height: auto;
+    padding: 16px;
+  }
+
+  .admin-sidebar-brand {
+    justify-content: flex-start;
+    padding: 0 0 14px;
+  }
+
+  .admin-sidebar-brand img {
+    width: 170px;
+  }
+
+  .admin-sidebar-navigation {
+    flex-direction: row;
+    flex-wrap: wrap;
+    margin-top: 14px;
+  }
+
+  .admin-sidebar-navigation a {
+    flex: 1 1 auto;
+    padding: 10px;
+    text-align: center;
+  }
+
+  .admin-sidebar-logout {
+    align-self: flex-end;
+    margin-top: 12px;
+  }
+
+  .admin-layout-content {
+    width: 100%;
+    min-height: auto;
+    margin-left: 0;
+    padding: 20px 16px;
+  }
+
+  .admin-sidebar-bottom {
+    width: 100%;
+    flex-direction: row;
+    justify-content: space-between;
+}
+
+  .admin-sidebar-public-link,
+  .admin-sidebar-logout {
+    flex: 1;
+    text-align: center;
+  }
+}
+
+.admin-sidebar-bottom {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: auto;
+}
+
+.admin-sidebar-public-link {
+  display: block;
+  padding: 13px 16px;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  border-radius: 8px;
+  background: transparent;
+  color: #ffffff;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  text-align: center;
+  text-decoration: none;
+  transition: background 0.2s;
+}
+
+.admin-sidebar-public-link:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.admin-sidebar-logout {
+  margin-top: 0;
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  color: #ffffff;
+}
+
+.admin-sidebar-logout:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.admin-sidebar-bottom .admin-sidebar-public-link,
+.admin-sidebar-bottom .admin-sidebar-logout {
+  text-align: left;
+  padding: 13px 16px;
+}

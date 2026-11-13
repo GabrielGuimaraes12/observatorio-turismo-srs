@@ -1,9 +1,8 @@
-
 .admin-reports-page {
-  min-height: 100vh;
-  padding: 48px;
-  background: #f7f8fc;
-  color: #222222;
+  min-height: 100%;
+  padding: 0;
+  background: transparent;
+  color: #263b59;
 }
 
 .admin-reports-header {

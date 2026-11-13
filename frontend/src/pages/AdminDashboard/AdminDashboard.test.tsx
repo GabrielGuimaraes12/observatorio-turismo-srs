@@ -1,4 +1,3 @@
-
 import {
   fireEvent,
   render,
@@ -108,7 +107,7 @@ describe('AdminDashboard', () => {
     renderDashboard();
 
     expect(
-      screen.getByRole('heading', { name: 'Dashboard ADMIN' }),
+      screen.getByRole('heading', { name: 'Dashboard Administrativo' }),
     ).toBeInTheDocument();
 
     expect(
@@ -132,7 +131,7 @@ describe('AdminDashboard', () => {
     renderDashboard();
 
     expect(
-      screen.getByText('O ADMIN pode convidar somente usuários BUSINESS.', {
+      screen.getByText('Administradores podem convidar somente usuários Estabelecimentos.', {
         exact: false,
       }),
     ).toBeInTheDocument();
@@ -186,19 +185,19 @@ describe('AdminDashboard', () => {
     );
 
     expect(
-      screen.getByRole('button', { name: 'BUSINESS' }),
+      screen.getByRole('button', { name: 'Estabelecimentos' }),
     ).toBeInTheDocument();
 
     expect(
-      screen.getByRole('button', { name: 'USER' }),
-    ).toBeInTheDocument();
+      screen.getAllByRole('button', { name: 'Usuários' }),
+    ).toHaveLength(2);
 
     expect(
-      screen.queryByRole('button', { name: 'HR' }),
+      screen.queryByRole('button', { name: 'Recursos Humanos' }),
     ).not.toBeInTheDocument();
 
     expect(
-      screen.queryByRole('button', { name: 'ADMIN' }),
+      screen.queryByRole('button', { name: 'Administradores' }),
     ).not.toBeInTheDocument();
 
     expect(
@@ -206,7 +205,7 @@ describe('AdminDashboard', () => {
     ).toBeInTheDocument();
 
     fireEvent.click(
-      screen.getByRole('button', { name: 'USER' }),
+      screen.getAllByRole('button', { name: 'Usuários'})[1]
     );
 
     await waitFor(() => {
@@ -285,7 +284,7 @@ describe('AdminDashboard', () => {
     renderDashboard();
 
     fireEvent.click(
-      screen.getByRole('button', { name: 'Usuários' }),
+      screen.getByRole('button', { name: 'Usuários' })
     );
 
     await screen.findByText('Empresa Teste');

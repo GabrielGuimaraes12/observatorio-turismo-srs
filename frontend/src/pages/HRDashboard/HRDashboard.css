@@ -1,4 +1,3 @@
-
 .hr-dashboard {
   min-height: 100vh;
   background: #f8f7fb;
@@ -41,31 +40,66 @@
   padding: 32px 24px 64px;
 }
 
-.hr-tabs,
+
 .hr-role-tabs {
+  position: relative;
   display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
+  width: fit-content;
+  max-width: 100%;
+  gap: 0;
+  padding: 4px;
   margin-bottom: 24px;
+  border-radius: 12px;
+  background: #f0edf9;
+  isolation: isolate;
+  box-sizing: border-box;
 }
 
-.hr-tabs button,
-.hr-role-tabs button {
-  padding: 12px 18px;
-  border: 1px solid #dcd6e8;
+.hr-role-tabs-indicator {
+  position: absolute;
+  z-index: -1;
+  top: 4px;
+  bottom: 4px;
+  left: 4px;
+  border: 1px solid #e7e1f5;
   border-radius: 8px;
-  background: white;
-  color: #40364c;
-  cursor: pointer;
-  font-weight: 600;
+  background: #ffffff;
+  box-shadow: 0 1px 3px rgba(38, 27, 70, 0.08);
+  transition: transform 350ms cubic-bezier(0.22, 1, 0.36, 1);
+  pointer-events: none;
+  box-sizing: border-box;
 }
 
-.hr-tabs button.active,
-.hr-role-tabs button.active {
-  background: #6c4ab6;
-  border-color: #6c4ab6;
-  color: white;
+.hr-role-tabs button {
+  position: relative;
+  flex: 0 0 auto;
+  padding: 11px 18px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: transparent;
+  color: #5c6070;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 600;
+  white-space: nowrap;
+  transition: color 250ms ease;
 }
+
+.hr-role-tabs button:hover:not(.active) {
+  color: #6048b5;
+}
+
+.hr-role-tabs button.active {
+  color: #6048b5;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hr-role-tabs-indicator,
+  .hr-role-tabs button {
+    transition: none;
+  }
+}
+
 
 .hr-panel {
   padding: 28px;
@@ -230,4 +264,278 @@
   .hr-field {
     min-width: 0;
   }
+}
+
+.admin-dashboard-page .hr-dashboard {
+  min-height: auto;
+  background: transparent;
+}
+
+.admin-dashboard-page .hr-main {
+  max-width: none;
+  margin: 0;
+  padding: 24px 0 0;
+}
+
+.admin-dashboard-header {
+  margin-bottom: 8px;
+}
+
+.admin-dashboard-header h1 {
+  margin: 0 0 8px;
+  color: #263b59;
+  font-size: 32px;
+}
+
+.admin-dashboard-header p {
+  margin: 0;
+  color: #697586;
+  font-size: 15px;
+}
+
+/* Identidade visual do Dashboard Administrativo */
+
+.admin-dashboard-page {
+  --admin-primary: #0A4AAD;
+  --admin-purple: #6C5CE0;
+  --admin-pink: #C750D6;
+  --admin-gradient: linear-gradient(
+    110deg,
+    var(--admin-primary),
+    var(--admin-purple),
+    var(--admin-pink)
+  );
+  --admin-border: #E5E5F0;
+  --admin-muted: #697586;
+}
+
+/* Navegação das abas */
+
+.admin-dashboard-page .hr-tabs {
+  gap: 10px;
+  margin-bottom: 24px;
+}
+
+.admin-dashboard-page .hr-tabs button {
+  min-width: 110px;
+  padding: 12px 20px;
+  border: 1px solid var(--admin-border);
+  border-radius: 9px;
+  background: #FFFFFF;
+  color: #344B68;
+  font-size: 14px;
+  transition: background 0.2s, border-color 0.2s;
+}
+
+.admin-dashboard-page .hr-tabs button:hover {
+  border-color: var(--admin-purple);
+  background: #F7F5FF;
+}
+
+.admin-dashboard-page .hr-tabs button.active {
+  border-color: transparent;
+  background: var(--admin-gradient);
+  color: #FFFFFF;
+}
+
+/* Painéis */
+
+.admin-dashboard-page .hr-panel {
+  padding: 32px;
+  border: 1px solid var(--admin-border);
+  border-radius: 14px;
+  background: #FFFFFF;
+  box-shadow: 0 4px 18px rgba(30, 40, 80, 0.04);
+}
+
+.admin-dashboard-page .hr-panel h2 {
+  margin-bottom: 12px;
+  color: #263B59;
+  font-size: 23px;
+}
+
+.admin-dashboard-page .hr-panel p {
+  color: var(--admin-muted);
+  line-height: 1.6;
+}
+
+/* Formulário de convites */
+
+.admin-dashboard-page .hr-form {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(180px, 1fr) auto;
+  align-items: end;
+  gap: 18px;
+  margin-top: 28px;
+  margin-bottom: 36px;
+}
+
+.admin-dashboard-page .hr-field {
+  min-width: 0;
+  gap: 9px;
+}
+
+.admin-dashboard-page .hr-field label {
+  color: #344B68;
+  font-size: 14px;
+}
+
+.admin-dashboard-page .hr-field input,
+.admin-dashboard-page .hr-field select {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 46px;
+  border-color: #DCD8ED;
+  border-radius: 8px;
+}
+
+.admin-dashboard-page .hr-field input:focus,
+.admin-dashboard-page .hr-field select:focus {
+  outline: none;
+  border-color: var(--admin-purple);
+  box-shadow: 0 0 0 3px rgba(108, 92, 224, 0.12);
+}
+
+/* Botões */
+
+.admin-dashboard-page .hr-primary-button {
+  min-height: 46px;
+  padding: 11px 22px;
+  background: var(--admin-gradient);
+  color: #FFFFFF;
+  transition: opacity 0.2s;
+}
+
+.admin-dashboard-page .hr-primary-button:hover:not(:disabled) {
+  opacity: 0.9;
+}
+
+.admin-dashboard-page .hr-danger-button {
+  border: 1px solid #F1CACA;
+  background: #FFFFFF;
+  color: #B42318;
+}
+
+.admin-dashboard-page .hr-danger-button:hover:not(:disabled) {
+  background: #FFF1F1;
+}
+
+/* Tabelas */
+
+.admin-dashboard-page .hr-table th {
+  padding: 15px 14px;
+  background: #F5F4FB;
+  color: #344B68;
+  font-weight: 600;
+}
+
+.admin-dashboard-page .hr-table td {
+  padding: 15px 14px;
+  color: #44546A;
+}
+
+.admin-dashboard-page .hr-table tbody tr:hover {
+  background: #FAF9FE;
+}
+
+/* Feedback */
+
+.admin-dashboard-page .hr-error {
+  padding: 12px 16px;
+  border-radius: 8px;
+  background: #FFF1F1;
+}
+
+.admin-dashboard-page .hr-success {
+  padding: 12px 16px;
+  border-radius: 8px;
+  background: #EAF7EF;
+}
+
+/* Responsividade */
+
+@media (max-width: 850px) {
+  .admin-dashboard-page .hr-form {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .admin-dashboard-page .hr-form .hr-primary-button {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 600px) {
+  .admin-dashboard-page .hr-panel {
+    padding: 20px 16px;
+  }
+
+  .admin-dashboard-page .hr-form {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-dashboard-page .hr-form .hr-primary-button {
+    grid-column: auto;
+    width: 100%;
+  }
+
+  .admin-dashboard-page .hr-tabs button {
+    flex: 1;
+    min-width: 0;
+  }
+}
+
+
+/* Estados vazios do Dashboard Administrativo */
+
+.admin-dashboard-page .admin-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 36px 24px;
+  text-align: center;
+}
+
+.admin-dashboard-page .admin-empty-state-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 64px;
+  height: 64px;
+  margin-bottom: 16px;
+  border-radius: 18px;
+  background: #F0EDFF;
+  color: #6C5CE0;
+  font-size: 34px;
+}
+
+.admin-dashboard-page .admin-empty-state h3 {
+  margin: 0 0 8px;
+  color: #263B59;
+  font-size: 18px;
+}
+
+.admin-dashboard-page .admin-empty-state p {
+  max-width: 480px;
+  margin: 4px 0;
+  color: #697586;
+  font-size: 14px;
+}
+
+.admin-dashboard-page .admin-status-badge {
+  display: inline-flex;
+  margin-top: 16px;
+  padding: 7px 14px;
+  border-radius: 20px;
+  background: #F0EDFF;
+  color: #6C5CE0;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.hr-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 24px;
 }

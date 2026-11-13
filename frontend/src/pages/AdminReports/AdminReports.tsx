@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { AdminLayout } from '../../components/admin/AdminLayout';
 import type { Report } from '../../types/report';
 import { ReportForm } from '../../components/admin/ReportForm';
 import { getReports, createReport, updateReport, deleteReport } from '../../services/reportService';
@@ -14,7 +14,6 @@ export function AdminReports() {
     const [isLoadingReports, setIsLoadingReports] = useState(true);
     const [reportsError, setReportsError] = useState('');
     const [updatingPublicationId, setUpdatingPublicationId] = useState<string | null>(null);
-    const navigate = useNavigate();
 
     useEffect(() => {
         let isMounted = true;
@@ -48,12 +47,6 @@ export function AdminReports() {
             isMounted = false;
         };
     }, []);
-
-    function handleLogout(){
-        sessionStorage.removeItem('authToken');
-        sessionStorage.removeItem('authUser');
-        navigate('/login', { replace: true });
-    }
 
     function handleCreate(){
         setSelectedReport(undefined);
@@ -172,6 +165,7 @@ export function AdminReports() {
 
 
   return (
+  <AdminLayout>
     <main className="admin-reports-page">
       <header className="admin-reports-header">
         <div>
@@ -180,23 +174,12 @@ export function AdminReports() {
         </div>
 
         <div className="admin-reports-header-actions">
-            <button type="button" onClick={handleCreate}>
-                + Novo relatório
-            </button>
-
-            <button type="button"
-                className="logout-button" onClick={handleLogout}
-            >
-                Sair
-            </button>
-            <button
-                type="button"
-                onClick={() => navigate('/admin')}
-            >
-                ← Dashboard ADMIN
-            </button>
+          <button type="button" onClick={handleCreate}>
+            + Novo relatório
+          </button>
         </div>
       </header>
+      
 
       {isFormOpen ? (
         <section className="admin-report-form-section">
@@ -285,5 +268,6 @@ export function AdminReports() {
         </section>
     )}
     </main>
+  </AdminLayout>
   );
 }
