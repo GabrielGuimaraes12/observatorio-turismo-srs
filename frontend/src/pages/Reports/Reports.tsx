@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import { Header } from '../../components/layout/Header';
 import { Footer } from '../../components/layout/Footer';
 import { getReports, getReportPdfUrl } from '../../services/reportService';
-import { applyReportMetadata } from '../../services/reportMetadataStorage';
 import './Reports.css';
 
 export function Reports() {
@@ -14,21 +13,19 @@ export function Reports() {
 
   useEffect(() => {
     getReports()
-      .then((data) => setReports(applyReportMetadata(data)))
+      .then(setReports)
       .catch(() => setError('Não foi possível carregar os relatórios.'))
       .finally(() => setLoading(false));
-}, []);
+  }, []);
 
-  const filteredReports = reports.filter((report) => {
-    const isPublished = report.published;
-    const matchesPeriod =
-      selectedPeriod === 'Todos' || report.period.includes(selectedPeriod);
-
-    const matchesSector =
-      selectedSector === 'Todos' || report.sector.includes(selectedSector);
-
-    return isPublished && matchesPeriod && matchesSector;
-});
+  const publishedReports = reports.filter((report) => report.published);
+  const periods = [...new Set(publishedReports.map(({ period }) => period).filter(Boolean))].sort();
+  const sectors = [...new Set(publishedReports.map(({ sector }) => sector)
+    .filter((sector) => sector && sector !== 'Todos'))].sort();
+  const filteredReports = publishedReports.filter((report) =>
+    (selectedPeriod === 'Todos' || report.period === selectedPeriod) &&
+    (selectedSector === 'Todos' || report.sector === selectedSector),
+  );
 
   async function handleViewReport(reportId: string) {
     const newTab = window.open('', '_blank');
@@ -98,22 +95,21 @@ export function Reports() {
 
         <section className="reports-filters">
           <select
-          value ={selectedPeriod}
-          onChange={(event) => setSelectedPeriod(event.target.value)}
+            aria-label="Período"
+            value={selectedPeriod}
+            onChange={(event) => setSelectedPeriod(event.target.value)}
           >
             <option value="Todos">Todos os períodos</option>
-            <option value="2026">2026</option>
-            <option value="2025">2025</option>
-            <option value="2024">2024</option>
+            {periods.map((period) => <option key={period}>{period}</option>)}
           </select>
 
           <select
-          value={selectedSector}
-          onChange={(event) => setSelectedSector(event.target.value)}
+            aria-label="Setor"
+            value={selectedSector}
+            onChange={(event) => setSelectedSector(event.target.value)}
           >
             <option value="Todos">Todos os setores</option>
-            <option value="Turismo">Turismo</option>
-            <option value="Hospedagem">Hospedagem</option>
+            {sectors.map((sector) => <option key={sector}>{sector}</option>)}
           </select>
         </section>
 
