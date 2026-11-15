@@ -21,6 +21,8 @@ dist/
 
 # Test coverage output
 coverage/
+frontend/test-results/
+frontend/playwright-report/
 
 # Logs
 *.log
